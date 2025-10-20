@@ -97,3 +97,38 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*.DS_Store
+
+# --- Prevent Alteruna framework ---
+Assets/Alteruna/
+Assets/AlterunaFPS/
+
+# --- macOS system files ---
+.DS_Store
+Assets/.DS_Store
+
+# --- Unity-generated junk ---
+Library/
+Temp/
+Obj/
+Logs/
+UserSettings/
+Build/
+Builds/
+MemoryCaptures/
+
+# --- IDE/VSCode files ---
+.vscode/
+*.csproj
+*.sln
+*.user
+*.unityproj
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.suo
+
+# --- Backup / Crash dumps ---
+sysinfo.txt
+*.stackdump
+*.bak
