@@ -10,13 +10,15 @@ public class FirstPersonController : MonoBehaviour
     public float gravity = -9.81f;
 
     [Header("Mouse Look")]
-    public Transform cameraTransform;   // drag the child Camera here
-    public float mouseSensitivity = 120f;
+    public Transform cameraTransform;   
+    public float mouseSensitivity = 400;
     public float pitchClamp = 85f;
 
     CharacterController controller;
     float verticalVelocity;
     float pitch; // camera up/down
+
+    private Vector3 lastPosition = new Vector3(0f,0f,0f);
 
     void Start()
     {
@@ -69,5 +71,7 @@ public class FirstPersonController : MonoBehaviour
         move.y = verticalVelocity;
 
         controller.Move(move * Time.deltaTime);
+
+
     }
 }
