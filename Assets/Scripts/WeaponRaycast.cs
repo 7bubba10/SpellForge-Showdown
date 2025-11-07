@@ -2,40 +2,39 @@ using UnityEngine;
 
 public class WeaponRaycast : MonoBehaviour
 {
-    public float fireRate = 50f;
-    public float damage = 10f;
-    public float range = 60f;
-    public LayerMask hitMask = ~0;
+    public GameObject projectilePrefab;
+    public Transform firePoint;
+    public float fireRate = 5f;
 
     float nextFireTime;
 
-    // Update is called once per frame
     void Update()
     {
-        if(Input.GetMouseButton(0) && Time.time >= nextFireTime){
+        if (Input.GetMouseButtonDown(0) && Time.time >= nextFireTime)
+        {
             nextFireTime = Time.time + 1f / fireRate;
-            FireOnce();
+            Shoot();
         }
-        
     }
 
-    void FireOnce()
+    void Shoot()
     {
-        // Ray from screen center
-        Ray ray = new Ray(transform.position, transform.forward);
-        if (Physics.Raycast(ray, out RaycastHit hit, range, hitMask, QueryTriggerInteraction.Ignore))
-        {
-            // Apply damage if object has Health
-            if (hit.collider.TryGetComponent<Health>(out var health))
-                health.TakeDamage(damage);
+        if (!projectilePrefab || !firePoint) return;
 
-            // Quick hit feedback
-            Debug.DrawLine(ray.origin, hit.point, Color.red, 0.1f);
-        }
-        else
+        // spawn slightly in front so we never overlap the player collider
+        Vector3 spawnPos = firePoint.position + firePoint.forward * 0.6f;
+        GameObject go = Instantiate(projectilePrefab, spawnPos, firePoint.rotation);
+
+        // find the shooter collider (CharacterController or any Collider on the player root)
+        Collider shooterCol =
+            GetComponentInParent<CharacterController>()?.GetComponent<Collider>() ??
+            GetComponentInParent<Collider>();
+
+        var proj = go.GetComponent<MagicProjectile>();
+        if (proj != null)
         {
-            Debug.DrawRay(ray.origin, ray.direction * range, Color.gray, 0.1f);
+            Vector3 launchVel = firePoint.forward * proj.speed;
+            proj.Launch(launchVel, shooterCol);
         }
     }
-    
 }
