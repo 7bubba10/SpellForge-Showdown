@@ -1,8 +1,9 @@
+using Unity.Netcode;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(Collider))]
-public class MagicProjectile : MonoBehaviour
+public class MagicProjectile : NetworkBehaviour
 {
     [Header("Projectile")]
     public float speed = 15f;
