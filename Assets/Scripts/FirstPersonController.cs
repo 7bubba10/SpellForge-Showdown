@@ -1,7 +1,8 @@
+using Unity.Netcode;
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
-public class FirstPersonController : MonoBehaviour
+public class FirstPersonController : NetworkBehaviour
 {
     [Header("Movement")]
     public float moveSpeed = 5f;
@@ -29,6 +30,8 @@ public class FirstPersonController : MonoBehaviour
 
     void Update()
     {
+        if (!IsOwner) return; // Only process input for you
+
         Look();
         Move();
 

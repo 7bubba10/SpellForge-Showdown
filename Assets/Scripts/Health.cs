@@ -1,23 +1,29 @@
 using UnityEngine;
+using Unity.Netcode;
 
-public class Health : MonoBehaviour
+public class Health : NetworkBehaviour
 {
-
     public float maxHP = 50f;
-    float hp;
 
-    void Awake() => hp = maxHP;
+    private NetworkVariable<float> hp = new NetworkVariable<float>();
+
+    void OnEnable()
+    {
+        if (IsServer)
+            hp.Value = maxHP;
+    }
 
     public void TakeDamage(float amount)
     {
-        hp -= amount;
-        Debug.Log($"{gameObject.name} took {amount} damage. HP left: {hp}");
-        if(hp <= 0){
+        if (!IsServer) return; // only server applies damage
+
+        hp.Value -= amount;
+        Debug.Log($"{gameObject.name} took {amount} damage. HP left: {hp.Value}");
+
+        if (hp.Value <= 0)
+        {
             Debug.Log($"{gameObject.name} destroyed!");
-            Destroy(gameObject);
-        } 
-
+            GetComponent<NetworkObject>().Despawn(); // sync despawn across clients
+        }
     }
-
-    
 }
