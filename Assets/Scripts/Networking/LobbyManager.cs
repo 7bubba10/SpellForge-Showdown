@@ -29,15 +29,39 @@ public class LobbyManager : MonoBehaviour
     public string serverUrl = "http://localhost:3003/api/lobbies"; // update later
     private string lastCreatedRoomCode;
 
+    [Header("Canvases")]
+    public Canvas mainMenuCanvas;
+    public Canvas lobbyBrowserCanvas;
+
+    public void ShowLobbyBrowser()
+    {
+        mainMenuCanvas.enabled = false;
+        lobbyBrowserCanvas.enabled = true;
+    }
+
+    public void ShowMainMenu()
+    {
+        mainMenuCanvas.enabled = true;
+        lobbyBrowserCanvas.enabled = false;
+    }
+
+
     void Start()
     {
+        ShowMainMenu();
         createLobbyButton.onClick.AddListener(() => StartCoroutine(CreateLobby()));
         joinLobbyButton.onClick.AddListener(() =>
         {
             if (!string.IsNullOrEmpty(lastCreatedRoomCode))
+            {
                 StartCoroutine(JoinLobby(lastCreatedRoomCode));
+                ShowLobbyBrowser();
+            }   
             else
-                statusText.text = "No lobby created yet!";
+            {
+                ShowLobbyBrowser();
+            }
+                
         });
         statusText.text = "Ready.";
     }

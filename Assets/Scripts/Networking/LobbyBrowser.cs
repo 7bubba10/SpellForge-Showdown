@@ -3,7 +3,6 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.Networking;
 using System.Collections;
-using System.Text;
 using System.Collections.Generic;
 
 [System.Serializable]
@@ -24,15 +23,16 @@ public class LobbyBrowser : MonoBehaviour
 {
     [Header("UI References")]
     public Button refreshButton;
-    public Transform lobbyListParent; // Content under Scroll View
-    public GameObject lobbyItemPrefab;
+    public Transform lobbyListParent;   // Content under Scroll View
+    public GameObject lobbyItemPrefab;  // Prefab showing room info + join button
     public TMP_Text statusText;
 
     [Header("Server Config")]
-    public string serverUrl = "http://localhost:3003/api/lobbies/list";
+    public string serverUrl = "http://localhost:3003/api/lobbies"; // base route only
 
     void Start()
     {
+        // Button calls LoadLobbies when clicked
         refreshButton.onClick.AddListener(() => StartCoroutine(LoadLobbies()));
     }
 
@@ -40,22 +40,33 @@ public class LobbyBrowser : MonoBehaviour
     {
         statusText.text = "Fetching lobbies...";
 
-        using (UnityWebRequest req = UnityWebRequest.Get(serverUrl))
+        using (UnityWebRequest req = UnityWebRequest.Get($"{serverUrl}/list"))
         {
             yield return req.SendWebRequest();
 
             if (req.result == UnityWebRequest.Result.Success)
             {
-                var json = req.downloadHandler.text;
+                string json = req.downloadHandler.text;
                 Debug.Log($"[LobbyBrowser] Received: {json}");
+
                 try
                 {
-                    var response = JsonUtility.FromJson<LobbyListResponse>(json);
-                    PopulateList(response.lobbies);
-                    statusText.text = $"Loaded {response.lobbies.Count} lobbies.";
+                    // Try to parse JSON
+                    LobbyListResponse response = JsonUtility.FromJson<LobbyListResponse>(json);
+
+                    if (response != null && response.lobbies != null)
+                    {
+                        PopulateList(response.lobbies);
+                        statusText.text = $"Loaded {response.lobbies.Count} lobbies.";
+                    }
+                    else
+                    {
+                        statusText.text = "No lobbies found.";
+                    }
                 }
-                catch
+                catch (System.Exception e)
                 {
+                    Debug.LogError($"[LobbyBrowser] Parse error: {e.Message}");
                     statusText.text = "Error parsing lobby list.";
                 }
             }
@@ -68,22 +79,28 @@ public class LobbyBrowser : MonoBehaviour
 
     void PopulateList(List<LobbyData> lobbies)
     {
-        // Clear old items
+        // Remove any old items
         foreach (Transform child in lobbyListParent)
             Destroy(child.gameObject);
 
         foreach (var lobby in lobbies)
         {
-            var item = Instantiate(lobbyItemPrefab, lobbyListParent);
-            item.GetComponentInChildren<TMP_Text>().text = $"Code: {lobby.roomCode} ({lobby.players} players)";
-            
-            // Optional: hook up join button
+            GameObject item = Instantiate(lobbyItemPrefab, lobbyListParent);
+
+            TMP_Text[] texts = item.GetComponentsInChildren<TMP_Text>();
+            if (texts.Length > 0)
+                texts[0].text = $"Room: {lobby.roomCode} ({lobby.players} players)";
+
             Button joinBtn = item.GetComponentInChildren<Button>();
-            joinBtn.onClick.AddListener(() =>
+            if (joinBtn != null)
             {
-                Debug.Log($"Joining lobby {lobby.roomCode}");
-                // Later connect to LobbyManager.JoinLobby(lobby.roomCode)
-            });
+                joinBtn.onClick.AddListener(() =>
+                {
+                    Debug.Log($"Joining lobby: {lobby.roomCode}");
+                    statusText.text = $"Joining lobby {lobby.roomCode}...";
+                    // Future: call LobbyManager.JoinLobby(lobby.roomCode);
+                });
+            }
         }
     }
 }
