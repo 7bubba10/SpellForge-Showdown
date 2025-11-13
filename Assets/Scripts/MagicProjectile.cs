@@ -8,7 +8,7 @@ public class MagicProjectile : NetworkBehaviour
     [Header("Projectile")]
     public float speed = 15f;
     public float lifetime = 3f;
-    public float damage = 15f;
+    public int damage = 15;
     public GameObject impactEffect;
 
     Rigidbody rb;
@@ -41,14 +41,25 @@ public class MagicProjectile : NetworkBehaviour
         rb.linearVelocity = velocity; // units/second (do NOT multiply by deltaTime)
     }
 
-    void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(Collider other)
     {
-        if (other.TryGetComponent<Health>(out var health))
-            health.TakeDamage(damage);
+        if (!IsOwner) return; // Only owner projectile applies damage
 
+        Health hp = other.GetComponent<Health>();
+        if (hp != null)
+        {
+            hp.DealDamageServerRpc(damage);
+        }
+
+        // Spawn impact effect locally (optional to network later)
         if (impactEffect)
+        {
             Instantiate(impactEffect, transform.position, Quaternion.identity);
+        }
 
         Destroy(gameObject);
     }
+
+
+    
 }

@@ -1,13 +1,14 @@
 using UnityEngine;
 using Unity.Netcode;
-using UnityEngine.SceneManagement;
 
 public class MatchStarter : MonoBehaviour
 {
     public void StartMatchAsHost()
     {
-        NetworkManager.Singleton.StartHost();
-        NetworkManager.Singleton.SceneManager.LoadScene("MainScene", LoadSceneMode.Single);
+        if (NetworkManager.Singleton.StartHost())
+        {
+            NetworkManager.Singleton.SceneManager.LoadScene("MainScene", UnityEngine.SceneManagement.LoadSceneMode.Single);
+        }
     }
 
     public void StartMatchAsClient()
