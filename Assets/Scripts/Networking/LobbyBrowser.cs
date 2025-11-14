@@ -79,27 +79,23 @@ public class LobbyBrowser : MonoBehaviour
 
     void PopulateList(List<LobbyData> lobbies)
     {
-        // Remove any old items
+        // Remove old UI elements
         foreach (Transform child in lobbyListParent)
             Destroy(child.gameObject);
 
+        // Create a new UI entry for each lobby
         foreach (var lobby in lobbies)
         {
-            GameObject item = Instantiate(lobbyItemPrefab, lobbyListParent);
+            GameObject itemObj = Instantiate(lobbyItemPrefab, lobbyListParent);
+            LobbyItem item = itemObj.GetComponent<LobbyItem>();
 
-            TMP_Text[] texts = item.GetComponentsInChildren<TMP_Text>();
-            if (texts.Length > 0)
-                texts[0].text = $"Room: {lobby.roomCode} ({lobby.players} players)";
-
-            Button joinBtn = item.GetComponentInChildren<Button>();
-            if (joinBtn != null)
+            if (item != null)
             {
-                joinBtn.onClick.AddListener(() =>
-                {
-                    Debug.Log($"Joining lobby: {lobby.roomCode}");
-                    statusText.text = $"Joining lobby {lobby.roomCode}...";
-                    // Future: call LobbyManager.JoinLobby(lobby.roomCode);
-                });
+                item.SetUp(lobby.roomCode, lobby.players);
+            }
+            else
+            {
+                Debug.LogError("[LobbyBrowser] Missing LobbyItem component on prefab!");
             }
         }
     }
