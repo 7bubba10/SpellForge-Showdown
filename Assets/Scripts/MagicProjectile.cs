@@ -1,54 +1,67 @@
-using Unity.Netcode;
 using UnityEngine;
+using Unity.Netcode;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(Collider))]
 public class MagicProjectile : NetworkBehaviour
 {
-    [Header("Projectile")]
     public float speed = 15f;
     public float lifetime = 3f;
-    public float damage = 15f;
+    public int damage = 15;
     public GameObject impactEffect;
 
-    Rigidbody rb;
-    Collider myCol;
+    private Rigidbody rb;
+    private Collider col;
 
-    void Awake()
+    private void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        myCol = GetComponent<Collider>();
+        col = GetComponent<Collider>();
 
         rb.useGravity = false;
         rb.isKinematic = false;
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-
-        // Using trigger-based hits
-        myCol.isTrigger = true;
+        col.isTrigger = false;
     }
 
-    void OnEnable()
+    /// <summary>
+    /// Called by WeaponRaycast when projectile is spawned.
+    /// </summary>
+    public void Launch(Vector3 velocity)
     {
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+
+        rb.linearVelocity = velocity;  // Unity 6 uses linearVelocity
+
         Destroy(gameObject, lifetime);
     }
 
-    // Called immediately after Instantiate by the spawner
-    public void Launch(Vector3 velocity, Collider shooterColliderToIgnore = null)
+    /// <summary>
+    /// Ignore collisions with owner
+    /// </summary>
+    public void IgnoreOwnerCollision(GameObject owner)
     {
-        if (shooterColliderToIgnore && myCol)
-            Physics.IgnoreCollision(myCol, shooterColliderToIgnore, true);
+        Collider[] ownerCols = owner.GetComponentsInChildren<Collider>();
 
-        rb.linearVelocity = velocity; // units/second (do NOT multiply by deltaTime)
+        foreach (Collider oc in ownerCols)
+        {
+            if (oc != null)
+                Physics.IgnoreCollision(col, oc, true);
+        }
     }
 
-    void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(Collider other)
     {
-        if (other.TryGetComponent<Health>(out var health))
-            health.TakeDamage(damage);
+        if (!IsServer)
+            return;
 
-        if (impactEffect)
+        if (other.TryGetComponent<Health>(out var hp))
+            hp.DealDamageServerRpc(damage);
+
+        if (impactEffect != null)
             Instantiate(impactEffect, transform.position, Quaternion.identity);
 
-        Destroy(gameObject);
+        GetComponent<NetworkObject>().Despawn();
     }
 }

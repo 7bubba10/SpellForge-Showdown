@@ -1,29 +1,72 @@
-using UnityEngine;
 using Unity.Netcode;
+using UnityEngine;
 
 public class Health : NetworkBehaviour
 {
-    public float maxHP = 50f;
+    [Header("Health Settings")]
+    public int maxHealth = 100;
 
-    private NetworkVariable<float> hp = new NetworkVariable<float>();
+    // Networked HP value synchronized across clients
+    public NetworkVariable<int> currentHealth = new NetworkVariable<int>(
+        100,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
 
-    void OnEnable()
+    private bool isDead = false;
+
+    public override void OnNetworkSpawn()
     {
         if (IsServer)
-            hp.Value = maxHP;
+        {
+            currentHealth.Value = maxHealth;
+        }
+
+        currentHealth.OnValueChanged += OnHealthChanged;
     }
 
-    public void TakeDamage(float amount)
+    public override void OnDestroy()
     {
-        if (!IsServer) return; // only server applies damage
+        currentHealth.OnValueChanged -= OnHealthChanged;
+        base.OnDestroy();
+    }
 
-        hp.Value -= amount;
-        Debug.Log($"{gameObject.name} took {amount} damage. HP left: {hp.Value}");
 
-        if (hp.Value <= 0)
+    // Called by clients to request damage
+    [ServerRpc]
+    public void DealDamageServerRpc(int amount)
+    {
+        if (isDead) return;
+
+        currentHealth.Value -= amount;
+
+        if (currentHealth.Value <= 0)
         {
-            Debug.Log($"{gameObject.name} destroyed!");
-            GetComponent<NetworkObject>().Despawn(); // sync despawn across clients
+            currentHealth.Value = 0;
+            Die();
         }
+    }
+
+    private void OnHealthChanged(int previousValue, int newValue)
+    {
+        
+        Debug.Log($"{gameObject.name} HP changed: {previousValue} → {newValue}");
+    }
+
+    private void Die()
+    {
+        if (isDead) return;
+        isDead = true;
+
+        Debug.Log($"{gameObject.name} died.");
+
+        // Disable movement/camera for this player
+        var controller = GetComponent<FirstPersonController>();
+        if (controller) controller.enabled = false;
+
+        var cam = GetComponentInChildren<Camera>();
+        if (cam) cam.enabled = false;
+
+        
     }
 }
