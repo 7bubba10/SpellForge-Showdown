@@ -3,44 +3,51 @@ using Unity.Netcode;
 
 public class WeaponRaycast : NetworkBehaviour
 {
+    [Header("Shooting")]
     public GameObject projectilePrefab;
     public Transform firePoint;
     public float fireRate = 5f;
 
     private float nextFireTime;
+    private NetworkObject playerNO;
+
+    void Start()
+    {
+        playerNO = GetComponentInParent<NetworkObject>();
+    }
 
     void Update()
     {
-        // Only allow the local player to control shooting
-        if (!IsOwner) return;
+        if (playerNO == null || !playerNO.IsOwner)
+            return;
 
-        if (Input.GetMouseButtonDown(0) && Time.time >= nextFireTime)
+        if (Input.GetMouseButton(0) && Time.time >= nextFireTime)
         {
-            nextFireTime = Time.time + 1f / fireRate;
+            nextFireTime = Time.time + (1f / fireRate);
             ShootServerRpc();
         }
     }
 
-    // Run on the server spawns projectile for all players
     [ServerRpc]
-    void ShootServerRpc(ServerRpcParams rpcParams = default)
+    private void ShootServerRpc(ServerRpcParams rpcParams = default)
     {
-        if (!projectilePrefab || !firePoint) return;
-
-        GameObject projectile = Instantiate(
-            projectilePrefab,
-            firePoint.position + firePoint.forward * 0.6f,
-            firePoint.rotation
-        );
-
-        projectile.GetComponent<NetworkObject>().Spawn(); // sync across network
-
-        // Launch it 
-        var proj = projectile.GetComponent<MagicProjectile>();
-        if (proj != null)
+        if (projectilePrefab == null || firePoint == null)
         {
-            Vector3 launchVel = firePoint.forward * proj.speed;
-            proj.Launch(launchVel);
+            Debug.LogError("WeaponRaycast: projectilePrefab or firePoint missing!");
+            return;
         }
+
+        // Spawn projectile on server
+        GameObject proj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
+        NetworkObject projNO = proj.GetComponent<NetworkObject>();
+        projNO.SpawnWithOwnership(playerNO.OwnerClientId);
+
+        // Launch projectile
+        MagicProjectile mp = proj.GetComponent<MagicProjectile>();
+        Vector3 velocity = firePoint.forward * mp.speed;
+        mp.Launch(velocity);
+
+        // Ignore owner's colliders
+        mp.IgnoreOwnerCollision(playerNO.gameObject);
     }
 }
