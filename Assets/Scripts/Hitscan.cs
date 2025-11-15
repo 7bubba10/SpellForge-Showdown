@@ -1,7 +1,6 @@
 using UnityEngine;
-using Unity.Netcode;
 
-public class HitscanWeapon : NetworkBehaviour
+public class HitscanWeapon : MonoBehaviour
 {
     [Header("Weapon Settings")]
     public int damage = 15;
@@ -12,54 +11,27 @@ public class HitscanWeapon : NetworkBehaviour
 
     private Camera ownerCamera;
 
-    public override void OnNetworkSpawn()
+    void Start()
     {
-        // Get the player's camera ONLY for the local owner
-        if (IsOwner)
-        {
-            ownerCamera = GetComponentInChildren<Camera>();
-        }
+        ownerCamera = GetComponentInChildren<Camera>();
     }
 
-    /// <summary>
-    /// Called by player input when the weapon is fired.
-    /// This runs on the owning client and sends a request to the server.
-    /// </summary>
     public void TryFire()
     {
-        if (!IsOwner)
-            return;
+        RaycastHit hit;
 
-        FireServerRpc(ownerCamera.transform.position, ownerCamera.transform.forward);
-    }
-
-    /// <summary>
-    /// Server does the actual raycast to prevent cheating.
-    /// </summary>
-    [ServerRpc]
-    private void FireServerRpc(Vector3 origin, Vector3 direction)
-    {
-        if (Physics.Raycast(origin, direction, out RaycastHit hit, maxDistance))
+        if (Physics.Raycast(ownerCamera.transform.position, ownerCamera.transform.forward, out hit, maxDistance))
         {
-            // Deal damage if the hit object has a Health component
-            if (hit.collider.TryGetComponent<Health>(out var hp))
+            // Damage if object has health
+            var hp = hit.collider.GetComponent<Health>();
+            if (hp != null)
             {
-                hp.DealDamageServerRpc(damage);
+                hp.TakeDamage(damage);
             }
 
-            // Spawn impact VFX across clients
+            // Spawn VFX locally
             if (impactEffect != null)
-                SpawnImpactClientRpc(hit.point, Quaternion.LookRotation(hit.normal));
+                Instantiate(impactEffect, hit.point, Quaternion.LookRotation(hit.normal));
         }
-    }
-
-    /// <summary>
-    /// Clients spawn the impact visual effect.
-    /// </summary>
-    [ClientRpc]
-    private void SpawnImpactClientRpc(Vector3 pos, Quaternion rot)
-    {
-        if (impactEffect != null)
-            Instantiate(impactEffect, pos, rot);
     }
 }

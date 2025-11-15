@@ -1,8 +1,7 @@
-using Unity.Netcode;
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
-public class FirstPersonController : NetworkBehaviour
+public class FirstPersonController : MonoBehaviour
 {
     [Header("Movement")]
     public float moveSpeed = 5f;
@@ -10,32 +9,29 @@ public class FirstPersonController : NetworkBehaviour
     public float jumpHeight = 1.2f;
     public float gravity = -9.81f;
 
-    [Header("Mouse Look")]
-    public Transform cameraTransform;   
-    public float mouseSensitivity = 400;
+    [Header("Look")]
+    public Transform cameraTransform;
+    public float mouseSensitivity = 400f;
     public float pitchClamp = 85f;
 
     CharacterController controller;
     float verticalVelocity;
-    float pitch; // camera up/down
-
-    private Vector3 lastPosition = new Vector3(0f,0f,0f);
+    float pitch;
 
     void Start()
     {
         controller = GetComponent<CharacterController>();
+
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
 
     void Update()
     {
-        if (!IsOwner) return; // Only process input for you
-
         Look();
         Move();
 
-        // quick unlock for editor
+        // Exit lock in editor
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             Cursor.lockState = CursorLockMode.None;
@@ -50,16 +46,18 @@ public class FirstPersonController : NetworkBehaviour
 
         transform.Rotate(Vector3.up, mouseX); // yaw
 
-        pitch -= mouseY;                      // pitch
+        pitch -= mouseY; // pitch
         pitch = Mathf.Clamp(pitch, -pitchClamp, pitchClamp);
-        if (cameraTransform) cameraTransform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+        cameraTransform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
     }
 
     void Move()
     {
         bool grounded = controller.isGrounded;
 
-        if (grounded && verticalVelocity < 0f) verticalVelocity = -2f;
+        if (grounded && verticalVelocity < 0f)
+            verticalVelocity = -2f;
+
         if (grounded && Input.GetButtonDown("Jump"))
             verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
 
@@ -70,11 +68,10 @@ public class FirstPersonController : NetworkBehaviour
         Vector3 input = Vector3.Normalize(new Vector3(h, 0f, v));
 
         float speed = Input.GetKey(KeyCode.LeftShift) ? sprintSpeed : moveSpeed;
+
         Vector3 move = (transform.right * input.x + transform.forward * input.z) * speed;
         move.y = verticalVelocity;
 
         controller.Move(move * Time.deltaTime);
-
-
     }
 }

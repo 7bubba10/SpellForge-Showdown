@@ -1,7 +1,6 @@
 using UnityEngine;
-using Unity.Netcode;
 
-public class WeaponRaycast : NetworkBehaviour
+public class WeaponRaycast : MonoBehaviour
 {
     [Header("Shooting")]
     public GameObject projectilePrefab;
@@ -9,45 +8,27 @@ public class WeaponRaycast : NetworkBehaviour
     public float fireRate = 5f;
 
     private float nextFireTime;
-    private NetworkObject playerNO;
-
-    void Start()
-    {
-        playerNO = GetComponentInParent<NetworkObject>();
-    }
 
     void Update()
     {
-        if (playerNO == null || !playerNO.IsOwner)
-            return;
-
         if (Input.GetMouseButton(0) && Time.time >= nextFireTime)
         {
             nextFireTime = Time.time + (1f / fireRate);
-            ShootServerRpc();
+            ShootProjectile();
         }
     }
 
-    [ServerRpc]
-    private void ShootServerRpc(ServerRpcParams rpcParams = default)
+    void ShootProjectile()
     {
         if (projectilePrefab == null || firePoint == null)
         {
-            Debug.LogError("WeaponRaycast: projectilePrefab or firePoint missing!");
+            Debug.LogError("WeaponRaycast: Missing projectilePrefab or firePoint!");
             return;
         }
 
-        // Spawn projectile on server
-        GameObject proj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
-        NetworkObject projNO = proj.GetComponent<NetworkObject>();
-        projNO.SpawnWithOwnership(playerNO.OwnerClientId);
+        GameObject projObj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
 
-        // Launch projectile
-        MagicProjectile mp = proj.GetComponent<MagicProjectile>();
-        Vector3 velocity = firePoint.forward * mp.speed;
-        mp.Launch(velocity);
-
-        // Ignore owner's colliders
-        mp.IgnoreOwnerCollision(playerNO.gameObject);
+        MagicProjectile proj = projObj.GetComponent<MagicProjectile>();
+        proj.Launch(firePoint.forward, this.gameObject);
     }
 }
