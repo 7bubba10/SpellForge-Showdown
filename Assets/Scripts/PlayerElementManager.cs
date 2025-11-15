@@ -20,6 +20,17 @@ public class PlayerElementManager : MonoBehaviour
     public GameObject airWeapon;
     public GameObject waterWeapon;
 
+    [Header("Element Variables")]
+    public int fireDamage = 15;
+    public int earthDamage = 10;
+    public int airDamage = 5;
+    public int waterDamage = 20;
+
+    public float fireSpeed = 10;
+    public float earthSpeed = 15;
+    public float airSpeed = 20;
+    public float waterSpeed = 5;
+
     private void Start()
     {
         EquipElement(currentElement);
