@@ -21,14 +21,44 @@ public class WeaponRaycast : MonoBehaviour
     void ShootProjectile()
     {
         if (projectilePrefab == null || firePoint == null)
-        {
-            Debug.LogError("WeaponRaycast: Missing projectilePrefab or firePoint!");
-            return;
-        }
+        return;
 
+        // Spawn projectile
         GameObject projObj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
-
         MagicProjectile proj = projObj.GetComponent<MagicProjectile>();
-        proj.Launch(firePoint.forward, this.gameObject);
+
+        if (proj != null)
+        {
+            // Get player's element data
+            PlayerElementManager elem = firePoint.GetComponentInParent<PlayerElementManager>();
+
+            if (elem != null)
+            {
+                switch (elem.currentElement)
+                {
+                    case ElementType.Fire:
+                        proj.speed = elem.fireSpeed;
+                        proj.damage = (int)elem.fireDamage;
+                        break;
+
+                    case ElementType.Earth:
+                        proj.speed = elem.earthSpeed;
+                        proj.damage = (int)elem.earthDamage;
+                        break;
+
+                    case ElementType.Air:
+                        proj.speed = elem.airSpeed;
+                        proj.damage = (int)elem.airDamage;
+                        break;
+
+                    case ElementType.Water:
+                        proj.speed = elem.waterSpeed;
+                        proj.damage = (int)elem.waterDamage;
+                        break;
+                }
+            }
+
+            proj.Launch(firePoint.forward * proj.speed, gameObject);
+        }
     }
 }
