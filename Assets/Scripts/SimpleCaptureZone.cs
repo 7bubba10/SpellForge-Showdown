@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class SimpleCaptureZone : MonoBehaviour
 {
-    public float pointsPerSecond = 1f;
+    public int pointsPerSecond = 1;
 
     private PlayerScore playerInside;
 
@@ -27,6 +27,6 @@ public class SimpleCaptureZone : MonoBehaviour
     private void GivePoints()
     {
         if (playerInside != null)
-            playerInside.AddScore(1);
+            playerInside.AddScore(pointsPerSecond);
     }
 }
