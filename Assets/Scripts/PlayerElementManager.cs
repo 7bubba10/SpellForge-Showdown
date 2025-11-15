@@ -20,9 +20,20 @@ public class PlayerElementManager : MonoBehaviour
     public GameObject airWeapon;
     public GameObject waterWeapon;
 
+    [Header("Element Variables")]
+    public int fireDamage = 15;
+    public int earthDamage = 10;
+    public int airDamage = 5;
+    public int waterDamage = 20;
+
+    public float fireSpeed = 10;
+    public float earthSpeed = 15;
+    public float airSpeed = 20;
+    public float waterSpeed = 5;
+
     private void Start()
     {
-        // Make sure only the correct weapon is active at start
+        // Make sure element starts correctly
         EquipElement(currentElement);
     }
 
@@ -30,35 +41,19 @@ public class PlayerElementManager : MonoBehaviour
     {
         currentElement = newElement;
 
-        // Disable all weapons first
-        if (fireWeapon)  fireWeapon.SetActive(false);
-        if (earthWeapon) earthWeapon.SetActive(false);
-        if (airWeapon)   airWeapon.SetActive(false);
-        if (waterWeapon) waterWeapon.SetActive(false);
+        // Disable all weapons
+        fireWeapon.SetActive(false);
+        earthWeapon.SetActive(false);
+        airWeapon.SetActive(false);
+        waterWeapon.SetActive(false);
 
-        // Enable the selected one
+        // Enable the chosen one
         switch (currentElement)
         {
-            case ElementType.Fire:
-                if (fireWeapon) fireWeapon.SetActive(true);
-                break;
-
-            case ElementType.Earth:
-                if (earthWeapon) earthWeapon.SetActive(true);
-                break;
-
-            case ElementType.Air:
-                if (airWeapon) airWeapon.SetActive(true);
-                break;
-
-            case ElementType.Water:
-                if (waterWeapon) waterWeapon.SetActive(true);
-                break;
-
-            case ElementType.None:
-            default:
-                // No weapon
-                break;
+            case ElementType.Fire: fireWeapon.SetActive(true); break;
+            case ElementType.Earth: earthWeapon.SetActive(true); break;
+            case ElementType.Air: airWeapon.SetActive(true); break;
+            case ElementType.Water: waterWeapon.SetActive(true); break;
         }
 
         Debug.Log($"Equipped element: {currentElement}");
