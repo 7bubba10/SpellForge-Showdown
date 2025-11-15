@@ -12,7 +12,7 @@ public class FirstPersonController : NetworkBehaviour
 
     [Header("Mouse Look")]
     public Transform cameraTransform;   
-    public float mouseSensitivity = 400;
+    public float mouseSensitivity = 60;
     public float pitchClamp = 85f;
 
     CharacterController controller;

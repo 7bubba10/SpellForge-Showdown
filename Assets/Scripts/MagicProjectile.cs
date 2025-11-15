@@ -5,10 +5,17 @@ using Unity.Netcode;
 [RequireComponent(typeof(Collider))]
 public class MagicProjectile : NetworkBehaviour
 {
+    [Header("Projectile Settings")]
     public float speed = 15f;
     public float lifetime = 3f;
     public int damage = 15;
     public GameObject impactEffect;
+
+    [Header("AOE Options")]
+    public bool spawnAOE = false;            // Toggle feature
+    public GameObject aoePrefab;             // Prefab reference
+    public float aoeRadius = 3f;
+    public int aoeDamage = 10;
 
     private Rigidbody rb;
     private Collider col;
@@ -62,6 +69,24 @@ public class MagicProjectile : NetworkBehaviour
         if (impactEffect != null)
             Instantiate(impactEffect, transform.position, Quaternion.identity);
 
+        if (spawnAOE && aoePrefab != null)
+        {
+            SpawnAOE(transform.position);
+        }
         GetComponent<NetworkObject>().Despawn();
+        Destroy(gameObject);
+    }
+
+    private void SpawnAOE(Vector3 pos)
+    {
+        GameObject aoeObj = Instantiate(aoePrefab, pos, Quaternion.identity);
+        NetworkObject aoeNO = aoeObj.GetComponent<NetworkObject>();
+        aoeNO.Spawn();
+
+        // Immediately tell the AOE to initialize damage
+        if (aoeObj.TryGetComponent(out AOEHitbox aoe))
+        {
+            aoe.InitializeAOE(aoeRadius, aoeDamage);
+        }
     }
 }
