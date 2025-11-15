@@ -22,7 +22,6 @@ public class PlayerElementManager : MonoBehaviour
 
     private void Start()
     {
-        // Make sure only the correct weapon is active at start
         EquipElement(currentElement);
     }
 
@@ -30,37 +29,38 @@ public class PlayerElementManager : MonoBehaviour
     {
         currentElement = newElement;
 
-        // Disable all weapons first
-        if (fireWeapon)  fireWeapon.SetActive(false);
-        if (earthWeapon) earthWeapon.SetActive(false);
-        if (airWeapon)   airWeapon.SetActive(false);
-        if (waterWeapon) waterWeapon.SetActive(false);
+        // Turn everything off first
+        SetAllInactive();
 
-        // Enable the selected one
+        // Turn on the selected one
         switch (currentElement)
         {
             case ElementType.Fire:
                 if (fireWeapon) fireWeapon.SetActive(true);
                 break;
-
             case ElementType.Earth:
                 if (earthWeapon) earthWeapon.SetActive(true);
                 break;
-
             case ElementType.Air:
                 if (airWeapon) airWeapon.SetActive(true);
                 break;
-
             case ElementType.Water:
                 if (waterWeapon) waterWeapon.SetActive(true);
                 break;
-
             case ElementType.None:
             default:
-                // No weapon
+                // No weapon in hand
                 break;
         }
 
         Debug.Log($"Equipped element: {currentElement}");
+    }
+
+    private void SetAllInactive()
+    {
+        if (fireWeapon)  fireWeapon.SetActive(false);
+        if (earthWeapon) earthWeapon.SetActive(false);
+        if (airWeapon)   airWeapon.SetActive(false);
+        if (waterWeapon) waterWeapon.SetActive(false);
     }
 }
