@@ -8,6 +8,7 @@ public class MagicProjectile : MonoBehaviour
     public float lifetime = 3f;
     public int damage = 15;
     public GameObject impactEffect;
+    public float knockbackForce = 6f; // Nhow hard the enemy gets pushed
 
     private Rigidbody rb;
     private Collider col;
@@ -20,47 +21,53 @@ public class MagicProjectile : MonoBehaviour
 
         rb.useGravity = false;
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-        col.isTrigger = false;
+        col.isTrigger = true;
     }
 
     public void Launch(Vector3 direction, GameObject ownerObj)
     {
         owner = ownerObj;
 
-        // FULL reset of physics state
+        // Reset physics 
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
 
-        // IGNORE ALL COLLIDERS ON OWNER
+        // Ignore owner's colliders
         Collider[] ownerColliders = owner.GetComponentsInChildren<Collider>(true);
         foreach (Collider oc in ownerColliders)
         {
             Physics.IgnoreCollision(col, oc, true);
         }
 
-        // Apply velocity
-        rb.linearVelocity = direction.normalized * speed;
+        // Shoot
+        rb.linearVelocity = direction;
 
-        // Destroy after lifetime
+        // Auto destroy
         Destroy(gameObject, lifetime);
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        // Ignore owner always
+        // Ignore owner
         if (other.gameObject == owner) return;
 
-        // Spawn impact
+        // Spawn hit VFX
         if (impactEffect != null)
         {
             Instantiate(impactEffect, transform.position, Quaternion.identity);
         }
 
-        // Deal damage offline
-        Health hp;
-        if (other.TryGetComponent<Health>(out hp))
+        // Hit PLAYER
+        if (other.TryGetComponent<Health>(out var playerHp))
         {
-            hp.TakeDamage(damage);
+            playerHp.TakeDamage(damage);
+        }
+
+        // Hit ENEMY (with knockback)
+        if (other.TryGetComponent<EnemyHealth>(out var enemyHp))
+        {
+            Vector3 knockDir = (other.transform.position - owner.transform.position).normalized;
+            enemyHp.TakeDamage(damage, knockDir, knockbackForce);
         }
 
         Destroy(gameObject);

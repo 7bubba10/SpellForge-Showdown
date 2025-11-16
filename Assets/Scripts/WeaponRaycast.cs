@@ -22,23 +22,24 @@ public class WeaponRaycast : MonoBehaviour
     private void Update()
     {
         // manual reload
-        if (Input.GetKeyDown(KeyCode.R) && !props.isReloading)
+        if (Input.GetKeyDown(KeyCode.R) && !props.isLoading)
         {
             StartCoroutine(StartReload());
             return;
         }
 
-        // If out of ammo, automatically reload
-        if (props.currentAmmo <= 0 && !props.isReloading)
+        // automatic reload
+        if (props.currentAmmo <= 0 && !props.isLoading)
         {
             StartCoroutine(StartReload());
             return;
         }
 
-        bool shouldFire =
-            props.isAutomatic ? Input.GetMouseButton(0) : Input.GetMouseButtonDown(0);
+        bool shouldFire = props.isAutomatic
+            ? Input.GetMouseButton(0)
+            : Input.GetMouseButtonDown(0);
 
-        if (shouldFire && Time.time >= nextFireTime && !props.isReloading)
+        if (shouldFire && Time.time >= nextFireTime && !props.isLoading)
         {
             nextFireTime = Time.time + (1f / (baseFireRate * elementFireRateMultiplier));
             Shoot();
@@ -47,7 +48,7 @@ public class WeaponRaycast : MonoBehaviour
 
     private System.Collections.IEnumerator StartReload()
     {
-        props.isReloading = true;
+        props.isLoading = true;
         yield return new WaitForSeconds(props.reloadTime);
         props.Reload();
     }
@@ -62,11 +63,10 @@ public class WeaponRaycast : MonoBehaviour
         {
             Quaternion rot = firePoint.rotation;
 
-            // Apply spread for non-snipers
             if (props.spread > 0f && !props.isSniper)
             {
-                Vector3 randomSpread = Random.insideUnitCircle * props.spread;
-                rot = firePoint.rotation * Quaternion.Euler(randomSpread.x, randomSpread.y, 0);
+                Vector3 random = Random.insideUnitCircle * props.spread;
+                rot = firePoint.rotation * Quaternion.Euler(random.x, random.y, 0);
             }
 
             GameObject projObj = Instantiate(projectilePrefab, firePoint.position, rot);
@@ -74,7 +74,9 @@ public class WeaponRaycast : MonoBehaviour
 
             proj.speed = elementSpeed;
             proj.damage = elementDamage;
-            proj.Launch(firePoint.forward * proj.speed, gameObject);
+
+            // FIXED: use THIS weapon’s root as owner
+            proj.Launch(firePoint.forward * proj.speed, this.transform.root.gameObject);
         }
     }
 }

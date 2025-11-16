@@ -7,7 +7,7 @@ public enum ElementType
     Earth,
     Air,
     Water,
-    Steam    // combined element
+    Steam
 }
 
 public class PlayerElementManager : MonoBehaviour
@@ -15,9 +15,9 @@ public class PlayerElementManager : MonoBehaviour
     [Header("Two Element Inventory")]
     public ElementType elementA = ElementType.None;
     public ElementType elementB = ElementType.None;
-    public bool usingA = true;   // tracks which element is active
+    public bool usingA = true;
 
-    [Header("Current Element (auto managed)")]
+    [Header("Current Element")]
     public ElementType currentElement = ElementType.None;
 
     [Header("Element Weapons (assign in Inspector)")]
@@ -38,7 +38,7 @@ public class PlayerElementManager : MonoBehaviour
     public float fireSpeed = 10f;
     public float earthSpeed = 7f;
     public float airSpeed = 20f;
-    public float waterSpeed = 5f;
+    public float waterSpeed = 12f;
     public float steamSpeed = 12f;
 
     private void Start()
@@ -46,19 +46,19 @@ public class PlayerElementManager : MonoBehaviour
         EquipElement(currentElement);
     }
 
-    // ============================================================
-    //  ADD ELEMENT INTO A/B INVENTORY (CALLED FROM PICKUP SCRIPT)
-    // ============================================================
+    // ===================================================================
+    // ADD ELEMENT TO INVENTORY
+    // ===================================================================
     public void AddElementToInventory(ElementType newElement)
     {
-        // Already have this element
+        // Already have it
         if (elementA == newElement || elementB == newElement)
         {
             Debug.Log($"Already have {newElement}, ignoring pickup.");
             return;
         }
 
-        // Fill Element A first
+        // Fill A first
         if (elementA == ElementType.None)
         {
             elementA = newElement;
@@ -67,7 +67,7 @@ public class PlayerElementManager : MonoBehaviour
             return;
         }
 
-        // Fill Element B second
+        // Fill B second
         if (elementB == ElementType.None)
         {
             elementB = newElement;
@@ -76,12 +76,12 @@ public class PlayerElementManager : MonoBehaviour
             return;
         }
 
-        Debug.Log("Inventory full — cannot add more elements.");
+        Debug.Log("Inventory full!");
     }
 
-    // ============================
-    //        SWITCH ELEMENTS
-    // ============================
+    // ===================================================================
+    // SWITCH ELEMENT
+    // ===================================================================
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Q))
@@ -89,7 +89,10 @@ public class PlayerElementManager : MonoBehaviour
             SwitchElement();
         }
 
-        if(Input.GetKeyDown(KeyCode.F)) TryCombineElements();
+        if (Input.GetKeyDown(KeyCode.F))
+        {
+            TryCraftSteam();
+        }
     }
 
     private void SwitchElement()
@@ -98,64 +101,34 @@ public class PlayerElementManager : MonoBehaviour
         currentElement = usingA ? elementA : elementB;
 
         Debug.Log($"Swapped to element: {currentElement}");
-
         EquipElement(currentElement);
     }
 
-    // =========================================================
-    //                 COMBINE ELEMENTS (A + B)
-    // =========================================================
-
-    private void TryCombineElements()
+    // ===================================================================
+    // CRAFTING (Fire + Water = Steam)
+    // ===================================================================
+    private void TryCraftSteam()
     {
-        // Must have two elements
-        if (elementA == ElementType.None || elementB == ElementType.None)
-        {
-            Debug.Log("Cannot combine — need 2 elements.");
-            return;
-        }
-
-        ElementType result = ElementType.None;
-
-        // ---- Fire + Water = Steam ----
         if ((elementA == ElementType.Fire && elementB == ElementType.Water) ||
             (elementA == ElementType.Water && elementB == ElementType.Fire))
-        {   
-            result = ElementType.Steam;
-        }
-
-        // Add more combos later here...
-        // Example:
-        // if ((elementA == ElementType.Air && elementB == ElementType.Earth) || ...)
-
-        if (result == ElementType.None)
         {
-            Debug.Log("These two elements cannot be combined.");
-            return;
+            elementA = ElementType.Steam;
+            elementB = ElementType.None;
+            usingA = true;
+
+            Debug.Log("Crafted NEW ELEMENT: STEAM");
+            EquipElement(ElementType.Steam);
         }
-
-        // Perform combination
-        Debug.Log($"Combined {elementA} + {elementB} into {result}!");
-
-        // Store new element in slot A
-        elementA = result;
-
-        // Clear slot B
-        elementB = ElementType.None;
-
-        // Switch to new combined weapon
-        usingA = true;
-        EquipElement(result);
     }
 
-    // ============================
-    //        EQUIP WEAPON
-    // ============================
+    // ===================================================================
+    // EQUIP WEAPON
+    // ===================================================================
     public void EquipElement(ElementType newElement)
     {
         currentElement = newElement;
 
-        // Disable all first
+        // Disable all weapons
         fireWeapon.SetActive(false);
         earthWeapon.SetActive(false);
         airWeapon.SetActive(false);
@@ -164,7 +137,7 @@ public class PlayerElementManager : MonoBehaviour
 
         GameObject weaponToEnable = null;
         int dmg = 0;
-        float speed = 0f;
+        float speed = 0;
         int pellets = 1;
         float spread = 0;
         bool sniper = false;
@@ -210,9 +183,9 @@ public class PlayerElementManager : MonoBehaviour
                 dmg = steamDamage;
                 speed = steamSpeed;
                 auto = true;
-                rateMult = 1.3f;
                 pellets = 3;
                 spread = 4f;
+                rateMult = 1.3f;
                 break;
 
             case ElementType.None:
@@ -225,8 +198,18 @@ public class PlayerElementManager : MonoBehaviour
         Debug.Log($"Equipped element: {currentElement}");
     }
 
-    // Weapon Setup Helper
-    private void SetupWeapon(GameObject weapon, int dmg, float speed, int pellets, float spread, bool sniper, bool auto, float rateMult)
+    // ===================================================================
+    // APPLY VALUES TO WEAPON
+    // ===================================================================
+    private void SetupWeapon(
+        GameObject weapon,
+        int dmg,
+        float speed,
+        int pellets,
+        float spread,
+        bool sniper,
+        bool auto,
+        float rateMult)
     {
         if (weapon == null) return;
 
@@ -242,7 +225,7 @@ public class PlayerElementManager : MonoBehaviour
             props.fireRateMultiplier = rateMult;
 
             props.currentAmmo = props.magazineSize;
-            props.isReloading = false;
+            props.isLoading = false;
         }
 
         var ray = weapon.GetComponent<WeaponRaycast>();
