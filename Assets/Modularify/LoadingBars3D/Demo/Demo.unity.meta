@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 283853fcf248b32489c7e78d417ed224
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 252483
+  packageName: Modular 3D progress bars
+  packageVersion: 1.0.1
+  assetPath: Assets/Modularify/LoadingBars3D/Demo/Demo.unity
+  uploadId: 639591

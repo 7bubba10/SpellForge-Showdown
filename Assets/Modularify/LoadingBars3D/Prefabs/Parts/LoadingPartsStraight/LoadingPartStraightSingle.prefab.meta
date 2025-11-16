@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c5a9f639aae2c674091d33805f06ef29
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 252483
+  packageName: Modular 3D progress bars
+  packageVersion: 1.0.1
+  assetPath: Assets/Modularify/LoadingBars3D/Prefabs/Parts/LoadingPartsStraight/LoadingPartStraightSingle.prefab
+  uploadId: 639591

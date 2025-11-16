@@ -8,5 +8,6 @@ public class PlayerScore : MonoBehaviour
     {
         score += amount;
         ScoreUI.Instance.UpdateScore(score);
+        FindObjectOfType<ScoreManager>().score += amount;
     }
 }

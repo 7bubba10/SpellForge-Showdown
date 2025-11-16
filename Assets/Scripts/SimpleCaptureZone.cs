@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class SimpleCaptureZone : MonoBehaviour
 {
-    public float pointsPerSecond = 1f;
+    public int pointsPerSecond = 1;
 
     private PlayerScore playerInside;
 
@@ -19,14 +19,27 @@ public class SimpleCaptureZone : MonoBehaviour
     {
         if (other.TryGetComponent(out PlayerScore ps) && ps == playerInside)
         {
-            playerInside = null;
-            CancelInvoke(nameof(GivePoints));
+            StopScoring();
         }
+    }
+
+    private void OnDisable()
+    {
+        // Ensure scoring always stops when zone disappears
+        StopScoring();
+    }
+
+    private void StopScoring()
+    {
+        CancelInvoke(nameof(GivePoints));
+        playerInside = null;
     }
 
     private void GivePoints()
     {
         if (playerInside != null)
-            playerInside.AddScore(1);
+            playerInside.AddScore(pointsPerSecond);
+        else
+            CancelInvoke(nameof(GivePoints));
     }
 }
