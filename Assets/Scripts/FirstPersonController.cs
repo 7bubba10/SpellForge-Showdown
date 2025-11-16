@@ -18,6 +18,10 @@ public class FirstPersonController : MonoBehaviour
     float verticalVelocity;
     float pitch;
 
+    // >>> NEW: external forces applied by spells / wind / knockback
+    [Header("externals")] public Vector3 externalForce = Vector3.zero;
+    public float externalForceDamping = 5f; // how fast it fades
+
     void Start()
     {
         controller = GetComponent<CharacterController>();
@@ -30,6 +34,7 @@ public class FirstPersonController : MonoBehaviour
     {
         Look();
         Move();
+        DampExternalForce();
 
         // Exit lock in editor
         if (Input.GetKeyDown(KeyCode.Escape))
@@ -61,8 +66,10 @@ public class FirstPersonController : MonoBehaviour
         if (grounded && Input.GetButtonDown("Jump"))
             verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
 
+        // Apply gravity
         verticalVelocity += gravity * Time.deltaTime;
 
+        // Player input (WASD)
         float h = Input.GetAxisRaw("Horizontal");
         float v = Input.GetAxisRaw("Vertical");
         Vector3 input = Vector3.Normalize(new Vector3(h, 0f, v));
@@ -70,8 +77,31 @@ public class FirstPersonController : MonoBehaviour
         float speed = Input.GetKey(KeyCode.LeftShift) ? sprintSpeed : moveSpeed;
 
         Vector3 move = (transform.right * input.x + transform.forward * input.z) * speed;
-        move.y = verticalVelocity;
 
-        controller.Move(move * Time.deltaTime);
+        // FINAL MOVE VECTOR
+        Vector3 movement = move + externalForce;
+        // Add external vertical force into verticalVelocity
+        verticalVelocity += externalForce.y;
+
+        // Apply to final movement
+        movement.y = verticalVelocity;
+
+
+        controller.Move(movement * Time.deltaTime);
+    }
+
+    // >>> NEW: slowly fade external forces so they don't last forever
+    void DampExternalForce()
+    {
+        if (externalForce.magnitude > 0.1f)
+            externalForce = Vector3.Lerp(externalForce, Vector3.zero, externalForceDamping * Time.deltaTime);
+        else
+            externalForce = Vector3.zero;
+    }
+
+    // >>> NEW: Call this from spells / knockback / wind zones
+    public void AddExternalForce(Vector3 force)
+    {
+        externalForce += force;
     }
 }
