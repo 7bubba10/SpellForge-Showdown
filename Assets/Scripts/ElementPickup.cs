@@ -5,7 +5,7 @@ public class ElementPickup : MonoBehaviour
 {
     [Header("Element Settings")]
     public ElementType elementType = ElementType.Fire;
-    public float holdTime = 3f;  // seconds player must hold E
+    public float holdTime = 3f; // seconds to hold E
 
     [Header("Optional: UI prompt text")]
     public string promptText = "Hold E to claim element";
@@ -23,7 +23,6 @@ public class ElementPickup : MonoBehaviour
 
     private void Reset()
     {
-        // Make sure collider is trigger
         Collider col = GetComponent<Collider>();
         col.isTrigger = true;
     }
@@ -71,8 +70,6 @@ public class ElementPickup : MonoBehaviour
         {
             holdProgress += Time.deltaTime;
 
-            // TODO later: update a progress bar with (holdProgress / holdTime)
-
             if (holdProgress >= holdTime)
             {
                 ClaimElement();
@@ -80,7 +77,7 @@ public class ElementPickup : MonoBehaviour
         }
         else
         {
-            // Released E early → reset
+            // Released E early
             if (holdProgress > 0f)
             {
                 holdProgress = 0f;
@@ -95,7 +92,9 @@ public class ElementPickup : MonoBehaviour
 
         Debug.Log($"Element {elementType} claimed after holding E.");
 
-        currentPlayer.EquipElement(elementType);
+        // GIVE ELEMENT INTO PLAYER INVENTORY
+        currentPlayer.AddElementToInventory(elementType);
+
 
         if (hud != null)
             hud.HidePickupPrompt();

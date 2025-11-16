@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: ea8fa7a0d81322a45beed9c2baefcee3
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 252483
+  packageName: Modular 3D progress bars
+  packageVersion: 1.0.1
+  assetPath: Assets/Modularify/LoadingBars3D/Demo/Demo/GlobalVolumeProfile.asset
+  uploadId: 639591

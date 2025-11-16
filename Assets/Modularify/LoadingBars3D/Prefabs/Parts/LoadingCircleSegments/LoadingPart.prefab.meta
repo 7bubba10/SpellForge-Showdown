@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c2ca75227c44deb4ebb11fd1d97c71ce
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 252483
+  packageName: Modular 3D progress bars
+  packageVersion: 1.0.1
+  assetPath: Assets/Modularify/LoadingBars3D/Prefabs/Parts/LoadingCircleSegments/LoadingPart.prefab
+  uploadId: 639591
