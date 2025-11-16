@@ -31,7 +31,7 @@ public class Health : MonoBehaviour
 
         Debug.Log($"{gameObject.name} died.");
 
-        FirstPersonController controller = GetComponent<FirstPersonController>();
+        var controller = GetComponent<FirstPersonController>();
         if (controller) controller.enabled = false;
 
         var cam = GetComponentInChildren<Camera>();
