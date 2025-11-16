@@ -12,7 +12,6 @@ public class WeaponRaycast : MonoBehaviour
     [HideInInspector] public float elementFireRateMultiplier = 1f;
 
     private float nextFireTime;
-
     private ElementWeaponProperties props;
 
     private void Awake()
@@ -20,34 +19,57 @@ public class WeaponRaycast : MonoBehaviour
         props = GetComponent<ElementWeaponProperties>();
     }
 
-    void Update()
+    private void Update()
     {
-        bool shouldFire = props.isAutomatic ? Input.GetMouseButton(0) : Input.GetMouseButtonDown(0);
+        // manual reload
+        if (Input.GetKeyDown(KeyCode.R) && !props.isReloading)
+        {
+            StartCoroutine(StartReload());
+            return;
+        }
 
-        if (shouldFire && Time.time >= nextFireTime)
+        // If out of ammo, automatically reload
+        if (props.currentAmmo <= 0 && !props.isReloading)
+        {
+            StartCoroutine(StartReload());
+            return;
+        }
+
+        bool shouldFire =
+            props.isAutomatic ? Input.GetMouseButton(0) : Input.GetMouseButtonDown(0);
+
+        if (shouldFire && Time.time >= nextFireTime && !props.isReloading)
         {
             nextFireTime = Time.time + (1f / (baseFireRate * elementFireRateMultiplier));
             Shoot();
         }
     }
 
-    void Shoot()
+    private System.Collections.IEnumerator StartReload()
     {
+        props.isReloading = true;
+        yield return new WaitForSeconds(props.reloadTime);
+        props.Reload();
+    }
+
+    private void Shoot()
+    {
+        props.currentAmmo--;
+
         int pelletCount = Mathf.Max(1, props.pellets);
 
         for (int i = 0; i < pelletCount; i++)
         {
-            Quaternion spreadRot = firePoint.rotation;
+            Quaternion rot = firePoint.rotation;
 
-            if (props.spread > 0)
+            // Apply spread for non-snipers
+            if (props.spread > 0f && !props.isSniper)
             {
                 Vector3 randomSpread = Random.insideUnitCircle * props.spread;
-                spreadRot = Quaternion.Euler(
-                    firePoint.rotation.eulerAngles + new Vector3(randomSpread.x, randomSpread.y, 0)
-                );
+                rot = firePoint.rotation * Quaternion.Euler(randomSpread.x, randomSpread.y, 0);
             }
 
-            GameObject projObj = Instantiate(projectilePrefab, firePoint.position, spreadRot);
+            GameObject projObj = Instantiate(projectilePrefab, firePoint.position, rot);
             MagicProjectile proj = projObj.GetComponent<MagicProjectile>();
 
             proj.speed = elementSpeed;

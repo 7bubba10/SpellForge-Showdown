@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a85fb7cf145446245b84ecf7d4295fcc
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 252483
+  packageName: Modular 3D progress bars
+  packageVersion: 1.0.1
+  assetPath: Assets/Modularify/LoadingBars3D/Materials/FromShader/LoadingCircleSegments/InnerCircle_mat.mat
+  uploadId: 639591
