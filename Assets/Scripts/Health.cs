@@ -6,6 +6,8 @@ public class Health : MonoBehaviour
     int currentHealth;
     bool isDead = false;
 
+    public int CurrentHealth => currentHealth;
+
     void Start()
     {
         currentHealth = maxHealth;
