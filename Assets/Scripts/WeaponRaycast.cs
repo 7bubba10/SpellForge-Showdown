@@ -2,62 +2,56 @@ using UnityEngine;
 
 public class WeaponRaycast : MonoBehaviour
 {
-    [Header("Shooting")]
+    [Header("Projectile")]
     public GameObject projectilePrefab;
     public Transform firePoint;
-    public float fireRate = 5f;
+    public float baseFireRate = 5f;
+
+    [HideInInspector] public int elementDamage;
+    [HideInInspector] public float elementSpeed;
+    [HideInInspector] public float elementFireRateMultiplier = 1f;
 
     private float nextFireTime;
 
+    private ElementWeaponProperties props;
+
+    private void Awake()
+    {
+        props = GetComponent<ElementWeaponProperties>();
+    }
+
     void Update()
     {
-        if (Input.GetMouseButton(0) && Time.time >= nextFireTime)
+        bool shouldFire = props.isAutomatic ? Input.GetMouseButton(0) : Input.GetMouseButtonDown(0);
+
+        if (shouldFire && Time.time >= nextFireTime)
         {
-            nextFireTime = Time.time + (1f / fireRate);
-            ShootProjectile();
+            nextFireTime = Time.time + (1f / (baseFireRate * elementFireRateMultiplier));
+            Shoot();
         }
     }
 
-    void ShootProjectile()
+    void Shoot()
     {
-        if (projectilePrefab == null || firePoint == null)
-        return;
+        int pelletCount = Mathf.Max(1, props.pellets);
 
-        // Spawn projectile
-        GameObject projObj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
-        MagicProjectile proj = projObj.GetComponent<MagicProjectile>();
-
-        if (proj != null)
+        for (int i = 0; i < pelletCount; i++)
         {
-            // Get player's element data
-            PlayerElementManager elem = firePoint.GetComponentInParent<PlayerElementManager>();
+            Quaternion spreadRot = firePoint.rotation;
 
-            if (elem != null)
+            if (props.spread > 0)
             {
-                switch (elem.currentElement)
-                {
-                    case ElementType.Fire:
-                        proj.speed = elem.fireSpeed;
-                        proj.damage = (int)elem.fireDamage;
-                        break;
-
-                    case ElementType.Earth:
-                        proj.speed = elem.earthSpeed;
-                        proj.damage = (int)elem.earthDamage;
-                        break;
-
-                    case ElementType.Air:
-                        proj.speed = elem.airSpeed;
-                        proj.damage = (int)elem.airDamage;
-                        break;
-
-                    case ElementType.Water:
-                        proj.speed = elem.waterSpeed;
-                        proj.damage = (int)elem.waterDamage;
-                        break;
-                }
+                Vector3 randomSpread = Random.insideUnitCircle * props.spread;
+                spreadRot = Quaternion.Euler(
+                    firePoint.rotation.eulerAngles + new Vector3(randomSpread.x, randomSpread.y, 0)
+                );
             }
 
+            GameObject projObj = Instantiate(projectilePrefab, firePoint.position, spreadRot);
+            MagicProjectile proj = projObj.GetComponent<MagicProjectile>();
+
+            proj.speed = elementSpeed;
+            proj.damage = elementDamage;
             proj.Launch(firePoint.forward * proj.speed, gameObject);
         }
     }
