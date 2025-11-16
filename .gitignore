@@ -132,3 +132,4 @@ MemoryCaptures/
 sysinfo.txt
 *.stackdump
 *.bak
+Assets/Scenes/MainScene_fromMain.unity.meta
