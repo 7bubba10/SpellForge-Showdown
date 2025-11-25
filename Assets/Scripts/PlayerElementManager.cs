@@ -51,14 +51,12 @@ public class PlayerElementManager : MonoBehaviour
     // ===================================================================
     public void AddElementToInventory(ElementType newElement)
     {
-        // Already have it
         if (elementA == newElement || elementB == newElement)
         {
             Debug.Log($"Already have {newElement}, ignoring pickup.");
             return;
         }
 
-        // Fill A first
         if (elementA == ElementType.None)
         {
             elementA = newElement;
@@ -67,7 +65,6 @@ public class PlayerElementManager : MonoBehaviour
             return;
         }
 
-        // Fill B second
         if (elementB == ElementType.None)
         {
             elementB = newElement;
@@ -105,7 +102,7 @@ public class PlayerElementManager : MonoBehaviour
     }
 
     // ===================================================================
-    // CRAFTING (Fire + Water = Steam)
+    // CRAFT (Fire + Water = Steam)
     // ===================================================================
     private void TryCraftSteam()
     {
@@ -146,16 +143,23 @@ public class PlayerElementManager : MonoBehaviour
 
         switch (newElement)
         {
+            // =============================================================
+            // FIRE 
+            // =============================================================
             case ElementType.Fire:
                 weaponToEnable = fireWeapon;
                 dmg = fireDamage;
-                speed = fireSpeed;
-                pellets = 6;
-                spread = 6f;
-                auto = false;
+                speed = 5f;          // slow flame-like speed
+                pellets = 1;         // stream
+                spread = 0f;         // no spread
+                auto = true;         // hold to fire
                 sniper = false;
+                rateMult = 4f;       // very fast fire rate
                 break;
 
+            // =============================================================
+            // EARTH 
+            // =============================================================
             case ElementType.Earth:
                 weaponToEnable = earthWeapon;
                 dmg = earthDamage;
@@ -163,6 +167,9 @@ public class PlayerElementManager : MonoBehaviour
                 pellets = 1;
                 break;
 
+            // =============================================================
+            // AIR 
+            // =============================================================
             case ElementType.Air:
                 weaponToEnable = airWeapon;
                 dmg = airDamage;
@@ -171,6 +178,9 @@ public class PlayerElementManager : MonoBehaviour
                 rateMult = 2f;
                 break;
 
+            // =============================================================
+            // WATER 
+            // =============================================================
             case ElementType.Water:
                 weaponToEnable = waterWeapon;
                 dmg = waterDamage;
@@ -178,14 +188,18 @@ public class PlayerElementManager : MonoBehaviour
                 sniper = true;
                 break;
 
+            // =============================================================
+            // STEAM 
+            // =============================================================
             case ElementType.Steam:
                 weaponToEnable = steamWeapon;
                 dmg = steamDamage;
                 speed = steamSpeed;
-                auto = true;
-                pellets = 3;
-                spread = 4f;
-                rateMult = 1.3f;
+                pellets = 1;        // triple burst
+                spread = 0f;        // no shotgun spread
+                auto = false;       // click once → burst
+                sniper = false;
+                rateMult = 1f;
                 break;
 
             case ElementType.None:
@@ -202,22 +216,29 @@ public class PlayerElementManager : MonoBehaviour
     // APPLY VALUES TO WEAPON
     // ===================================================================
     private void SetupWeapon(
-        GameObject weapon,
-        int dmg,
-        float speed,
-        int pellets,
-        float spread,
-        bool sniper,
-        bool auto,
-        float rateMult)
+    GameObject weapon,
+    int dmg,
+    float speed,
+    int pellets,
+    float spread,
+    bool sniper,
+    bool auto,
+    float rateMult)
     {
         if (weapon == null) return;
 
         weapon.SetActive(true);
 
-        var props = weapon.GetComponent<ElementWeaponProperties>();
+        ElementWeaponProperties props = weapon.GetComponent<ElementWeaponProperties>();
+        WeaponRaycast ray = weapon.GetComponent<WeaponRaycast>();
+
+        // 🔥 Steam = Charged Shot
         if (props != null)
         {
+            props.isChargedShot = (currentElement == ElementType.Steam);
+            props.currentCharge = 0f;
+
+            // normal stats
             props.pellets = pellets;
             props.spread = spread;
             props.isSniper = sniper;
@@ -228,7 +249,6 @@ public class PlayerElementManager : MonoBehaviour
             props.isLoading = false;
         }
 
-        var ray = weapon.GetComponent<WeaponRaycast>();
         if (ray != null)
         {
             ray.elementDamage = dmg;

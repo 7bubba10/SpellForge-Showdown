@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Health : MonoBehaviour
 {
@@ -38,5 +39,7 @@ public class Health : MonoBehaviour
 
         var cam = GetComponentInChildren<Camera>();
         if (cam) cam.enabled = false;
+
+        SceneManager.LoadScene("TestScene");
     }
 }
