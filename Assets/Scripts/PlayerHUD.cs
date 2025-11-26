@@ -86,6 +86,11 @@ public class PlayerHUD : MonoBehaviour
                 typeText = "No Spell";
                 spellName = "";
                 break;
+            
+            case ElementType.Ice:
+                typeText = "Ice";
+                spellName = "Frost Cannon";
+                break;
         }
 
         if (spellTypeText != null)

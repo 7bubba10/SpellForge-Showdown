@@ -7,7 +7,8 @@ public enum ElementType
     Earth,
     Air,
     Water,
-    Steam
+    Steam,
+    Ice
 }
 
 public class PlayerElementManager : MonoBehaviour
@@ -26,6 +27,8 @@ public class PlayerElementManager : MonoBehaviour
     public GameObject airWeapon;
     public GameObject waterWeapon;
     public GameObject steamWeapon;
+    
+    public GameObject iceWeapon;
 
     [Header("Element Damage")]
     public int fireDamage = 15;
@@ -34,12 +37,16 @@ public class PlayerElementManager : MonoBehaviour
     public int waterDamage = 20;
     public int steamDamage = 25;
 
+    public int iceDamage = 40;
+
     [Header("Element Speed")]
     public float fireSpeed = 10f;
     public float earthSpeed = 7f;
     public float airSpeed = 20f;
     public float waterSpeed = 12f;
     public float steamSpeed = 12f;
+
+    public float iceSpeed = 30f;
 
     private void Start()
     {
@@ -131,6 +138,7 @@ public class PlayerElementManager : MonoBehaviour
         airWeapon.SetActive(false);
         waterWeapon.SetActive(false);
         steamWeapon.SetActive(false);
+        iceWeapon.SetActive(false);
 
         GameObject weaponToEnable = null;
         int dmg = 0;
@@ -189,6 +197,20 @@ public class PlayerElementManager : MonoBehaviour
                 break;
 
             // =============================================================
+            // ICE  
+            // =============================================================
+            case ElementType.Ice:
+                weaponToEnable = iceWeapon;
+                dmg = iceDamage;
+                speed = iceSpeed;
+                pellets = 1;
+                spread = 0f;
+                auto = false;      // click-to-fire
+                sniper = false;
+                rateMult = 0.8f;   // slower than default rate
+                break;
+            
+            // =============================================================
             // STEAM 
             // =============================================================
             case ElementType.Steam:
@@ -201,6 +223,8 @@ public class PlayerElementManager : MonoBehaviour
                 sniper = false;
                 rateMult = 1f;
                 break;
+
+            
 
             case ElementType.None:
                 Debug.Log("Player has no element equipped.");
