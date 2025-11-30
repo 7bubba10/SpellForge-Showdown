@@ -1,47 +1,39 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine.SceneManagement;
 
-public class GameManager : MonoBehaviour
+public class CapturePointLogic : MonoBehaviour
 {
-    public static GameManager Instance;
+    public static CapturePointLogic Instance;
 
-    [Header("Capture Point Settings")]
+    [Header("Capture Point Rotation")]
     public List<GameObject> capturePoints = new List<GameObject>();
-    public float initialDelay = 10f;
+    public float initialDelay = 5f;
     public float activeTime = 30f;
     public float downtime = 10f;
 
     private int lastIndex = -1;
     private GameObject currentPoint;
 
-    private void Awake()
+    void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
     }
 
-    private void Start()
+    void Start()
     {
         DisableAllPoints();
-        StartCoroutine(CapturePointRotation());
+        StartCoroutine(RotateCapturePoints());
     }
 
     void DisableAllPoints()
     {
-        foreach (var point in capturePoints)
-            point.SetActive(false);
+        foreach (var p in capturePoints)
+            p.SetActive(false);
     }
 
-    IEnumerator CapturePointRotation()
+    IEnumerator RotateCapturePoints()
     {
         yield return new WaitForSeconds(initialDelay);
 
@@ -63,19 +55,13 @@ public class GameManager : MonoBehaviour
 
         int newIndex;
         do
-        {
             newIndex = Random.Range(0, capturePoints.Count);
-        }
         while (newIndex == lastIndex);
 
         lastIndex = newIndex;
-
         currentPoint = capturePoints[newIndex];
+
         currentPoint.SetActive(true);
-
-        // Notify players
-        Debug.Log($"Capture Point Active: {currentPoint.name}");
-        NotificationUI.Instance.ShowMessage($"Capture Point Active: {currentPoint.name}");
-
+        Debug.Log("Activated: " + currentPoint.name);
     }
 }

@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Modularify.LoadingBars3D;
 
 public class ScoreManager : MonoBehaviour
 {
@@ -11,12 +10,6 @@ public class ScoreManager : MonoBehaviour
 
     void Update()
     {
-        if (LoadingBarStraight.Instance != null)
-        {
-            float fillAmount = (float)score / scoreToWin;
-            LoadingBarStraight.Instance.SetPercentage(fillAmount);
-        }
-
         if (score >= scoreToWin)
             Victory();
     }

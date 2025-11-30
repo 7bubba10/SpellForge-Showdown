@@ -25,7 +25,6 @@ public class SimpleCaptureZone : MonoBehaviour
 
     private void OnDisable()
     {
-        // Ensure scoring always stops when zone disappears
         StopScoring();
     }
 
@@ -37,9 +36,20 @@ public class SimpleCaptureZone : MonoBehaviour
 
     private void GivePoints()
     {
-        if (playerInside != null)
-            playerInside.AddScore(pointsPerSecond);
-        else
+        if (playerInside == null)
+        {
             CancelInvoke(nameof(GivePoints));
+            return;
+        }
+
+        playerInside.AddCaptureProgress(pointsPerSecond);
+        playerInside.AddScore(pointsPerSecond);
+
+        if (playerInside.HasFilledCaptureGoal())
+        {
+            GameManager.Instance.CaptureComplete();
+            StopScoring();
+            return;
+        }
     }
 }
