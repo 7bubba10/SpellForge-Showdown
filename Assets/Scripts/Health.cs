@@ -1,10 +1,13 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Health : MonoBehaviour
 {
     public int maxHealth = 100;
     int currentHealth;
     bool isDead = false;
+
+    public int CurrentHealth => currentHealth;
 
     void Start()
     {
@@ -31,10 +34,12 @@ public class Health : MonoBehaviour
 
         Debug.Log($"{gameObject.name} died.");
 
-        FirstPersonController controller = GetComponent<FirstPersonController>();
+        var controller = GetComponent<FirstPersonController>();
         if (controller) controller.enabled = false;
 
         var cam = GetComponentInChildren<Camera>();
         if (cam) cam.enabled = false;
+
+        SceneManager.LoadScene("TestScene");
     }
 }

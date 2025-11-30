@@ -14,6 +14,13 @@ public class ElementPickup : MonoBehaviour
     private PlayerElementManager currentPlayer;
     private float holdProgress = 0f;
 
+    private PlayerHUD hud;
+
+    private void Awake()
+    {
+        hud = FindObjectOfType<PlayerHUD>();
+    }
+
     private void Reset()
     {
         Collider col = GetComponent<Collider>();
@@ -31,6 +38,9 @@ public class ElementPickup : MonoBehaviour
         holdProgress = 0f;
 
         Debug.Log($"Player entered {elementType} pickup. {promptText}");
+
+        if (hud != null)
+            hud.ShowPickupPrompt(promptText);
     }
 
     private void OnTriggerExit(Collider other)
@@ -44,6 +54,9 @@ public class ElementPickup : MonoBehaviour
             holdProgress = 0f;
 
             Debug.Log("Player left pickup area, progress reset.");
+
+            if (hud != null)
+                hud.HidePickupPrompt();
         }
     }
 
@@ -82,7 +95,11 @@ public class ElementPickup : MonoBehaviour
         // GIVE ELEMENT INTO PLAYER INVENTORY
         currentPlayer.AddElementToInventory(elementType);
 
-        // Destroy pickup
+
+        if (hud != null)
+            hud.HidePickupPrompt();
+
+        // Remove the pickup from the world
         Destroy(gameObject);
     }
 }

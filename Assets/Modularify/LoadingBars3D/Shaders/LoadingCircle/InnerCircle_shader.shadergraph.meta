@@ -1,5 +1,12 @@
 fileFormatVersion: 2
 guid: 8b04815fc3a27ea479448473e55f7490
+AssetOrigin:
+  serializedVersion: 1
+  productId: 252483
+  packageName: Modular 3D progress bars
+  packageVersion: 1.0.1
+  assetPath: Assets/Modularify/LoadingBars3D/Shaders/LoadingCircle/InnerCircle_shader.shadergraph
+  uploadId: 639591
 ScriptedImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -8,10 +15,3 @@ ScriptedImporter:
   assetBundleName: 
   assetBundleVariant: 
   script: {fileID: 11500000, guid: 625f186215c104763be7675aa2d941aa, type: 3}
-AssetOrigin:
-  serializedVersion: 1
-  productId: 252483
-  packageName: Modular 3D progress bars
-  packageVersion: 1.0.1
-  assetPath: Assets/Modularify/LoadingBars3D/Shaders/LoadingCircle/InnerCircle_shader.shadergraph
-  uploadId: 639591

@@ -11,9 +11,7 @@ public class ScoreManager : MonoBehaviour
     void Update()
     {
         if (score >= scoreToWin)
-        {
             Victory();
-        }
     }
 
     void Victory()

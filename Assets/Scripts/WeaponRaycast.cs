@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class WeaponRaycast : MonoBehaviour
 {
@@ -7,74 +8,132 @@ public class WeaponRaycast : MonoBehaviour
     public Transform firePoint;
     public float baseFireRate = 5f;
 
-    [HideInInspector] public int elementDamage;
+    [Header("Optional VFX")]
+    // Assign your vfx_Flamethrower_01 (ParticleSystem) on the Fire weapon only.
+    public ParticleSystem loopMuzzleVFX;
+
+    [HideInInspector] public int   elementDamage;
     [HideInInspector] public float elementSpeed;
     [HideInInspector] public float elementFireRateMultiplier = 1f;
 
-    private float nextFireTime;
-    private ElementWeaponProperties props;
+    ElementWeaponProperties props;
+    float nextFireTime;
+    bool  isCharging;
 
-    private void Awake()
-    {
-        props = GetComponent<ElementWeaponProperties>();
-    }
+    void Awake()    { props = GetComponent<ElementWeaponProperties>(); }
+    void OnEnable() { ToggleLoopVFX(false); }
+    void OnDisable(){ ToggleLoopVFX(false); }
 
-    private void Update()
+    void Update()
     {
-        // manual reload
-        if (Input.GetKeyDown(KeyCode.R) && !props.isReloading)
+        // Manual reload
+        if (Input.GetKeyDown(KeyCode.R) && !props.isLoading)
         {
             StartCoroutine(StartReload());
+            ToggleLoopVFX(false);
             return;
         }
 
-        // If out of ammo, automatically reload
-        if (props.currentAmmo <= 0 && !props.isReloading)
+        // Auto reload
+        if (props.currentAmmo <= 0 && !props.isLoading)
         {
             StartCoroutine(StartReload());
+            ToggleLoopVFX(false);
             return;
         }
 
-        bool shouldFire =
-            props.isAutomatic ? Input.GetMouseButton(0) : Input.GetMouseButtonDown(0);
+        // Charged shot (Steam)
+        if (props.isChargedShot)
+        {
+            ToggleLoopVFX(false); // no loop for charged shot
+            HandleChargedShot();
+            return;
+        }
 
-        if (shouldFire && Time.time >= nextFireTime && !props.isReloading)
+        // Normal weapons
+        bool holding = props.isAutomatic ? Input.GetMouseButton(0)
+                                         : Input.GetMouseButtonDown(0);
+
+        // Start/stop flamethrower VFX (only plays on Fire because only that weapon has a reference)
+        ToggleLoopVFX(holding && !props.isLoading);
+
+        if (holding && Time.time >= nextFireTime && !props.isLoading)
         {
             nextFireTime = Time.time + (1f / (baseFireRate * elementFireRateMultiplier));
-            Shoot();
+            ShootNormal();
         }
     }
 
-    private System.Collections.IEnumerator StartReload()
+    void ToggleLoopVFX(bool shouldPlay)
     {
-        props.isReloading = true;
-        yield return new WaitForSeconds(props.reloadTime);
-        props.Reload();
+        if (!loopMuzzleVFX) return;
+
+        if (shouldPlay)
+        {
+            if (!loopMuzzleVFX.isPlaying) loopMuzzleVFX.Play();
+        }
+        else
+        {
+            if (loopMuzzleVFX.isPlaying)
+                loopMuzzleVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
     }
 
-    private void Shoot()
+    void HandleChargedShot()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            isCharging = true;
+            props.currentCharge = props.minCharge;
+        }
+
+        if (Input.GetMouseButton(0) && isCharging)
+        {
+            props.currentCharge += Time.deltaTime * props.maxCharge;
+            props.currentCharge = Mathf.Clamp(props.currentCharge, props.minCharge, props.maxCharge);
+        }
+
+        if (Input.GetMouseButtonUp(0) && isCharging)
+        {
+            isCharging = false;
+            ShootChargedShot(props.currentCharge);
+            props.currentCharge = 0f;
+        }
+    }
+
+    void ShootChargedShot(float charge)
     {
         props.currentAmmo--;
 
-        int pelletCount = Mathf.Max(1, props.pellets);
+        float dmg = elementDamage * charge;
+        float spd = elementSpeed * Mathf.Lerp(1f, 1.4f, charge / props.maxCharge);
 
-        for (int i = 0; i < pelletCount; i++)
-        {
-            Quaternion rot = firePoint.rotation;
+        Vector3 spawnPos = firePoint.position + firePoint.forward * 0.6f;
+        GameObject projObj = Instantiate(projectilePrefab, spawnPos, firePoint.rotation);
+        var proj = projObj.GetComponent<MagicProjectile>();
 
-            // Apply spread for non-snipers
-            if (props.spread > 0f && !props.isSniper)
-            {
-                Vector3 randomSpread = Random.insideUnitCircle * props.spread;
-                rot = firePoint.rotation * Quaternion.Euler(randomSpread.x, randomSpread.y, 0);
-            }
+        proj.damage = Mathf.RoundToInt(dmg);
+        proj.speed  = spd;
+        proj.Launch(firePoint.forward * proj.speed, transform.root.gameObject);
+    }
 
-            GameObject projObj = Instantiate(projectilePrefab, firePoint.position, rot);
-            MagicProjectile proj = projObj.GetComponent<MagicProjectile>();
+    void ShootNormal()
+    {
+        props.currentAmmo--;
 
-            proj.speed = elementSpeed;
-            proj.damage = elementDamage;
-            proj.Launch(firePoint.forward * proj.speed, gameObject);
-        }
+        Vector3 spawnPos = firePoint.position + firePoint.forward * 0.6f;
+        GameObject projObj = Instantiate(projectilePrefab, spawnPos, firePoint.rotation);
+        var proj = projObj.GetComponent<MagicProjectile>();
+
+        proj.speed  = elementSpeed;
+        proj.damage = elementDamage;
+        proj.Launch(firePoint.forward * proj.speed, transform.root.gameObject);
+    }
+
+    IEnumerator StartReload()
+    {
+        props.isLoading = true;
+        yield return new WaitForSeconds(props.reloadTime);
+        props.Reload();
     }
 }
