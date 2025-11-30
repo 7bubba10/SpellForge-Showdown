@@ -7,11 +7,14 @@ public class MagicProjectile : MonoBehaviour
     public float speed = 15f;
     public float lifetime = 3f;
     public int damage = 15;
+    public float maxDistance = 40f;  // safer default
     public GameObject impactEffect;
 
     private Rigidbody rb;
     private Collider col;
     private GameObject owner;
+
+    private Vector3 startPos;
 
     private void Awake()
     {
@@ -20,48 +23,49 @@ public class MagicProjectile : MonoBehaviour
 
         rb.useGravity = false;
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-        col.isTrigger = false;
+
+        col.isTrigger = true;
     }
 
     public void Launch(Vector3 direction, GameObject ownerObj)
     {
         owner = ownerObj;
 
-        // FULL reset of physics state
+        // Correct start position
+        startPos = transform.position;
+
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
 
-        // IGNORE ALL COLLIDERS ON OWNER
+        // Ignore owner collisions
         Collider[] ownerColliders = owner.GetComponentsInChildren<Collider>(true);
         foreach (Collider oc in ownerColliders)
-        {
             Physics.IgnoreCollision(col, oc, true);
-        }
 
-        // Apply velocity
-        rb.linearVelocity = direction.normalized * speed;
+        // Shoot
+        rb.linearVelocity = direction;
 
-        // Destroy after lifetime
         Destroy(gameObject, lifetime);
+    }
+
+    private void Update()
+    {
+        if (Vector3.Distance(startPos, transform.position) >= maxDistance)
+            Destroy(gameObject);
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        // Ignore owner always
         if (other.gameObject == owner) return;
 
-        // Spawn impact
         if (impactEffect != null)
-        {
             Instantiate(impactEffect, transform.position, Quaternion.identity);
-        }
 
-        // Deal damage offline
-        Health hp;
-        if (other.TryGetComponent<Health>(out hp))
-        {
+        if (other.TryGetComponent<Health>(out var hp))
             hp.TakeDamage(damage);
-        }
+
+        if (other.TryGetComponent<EnemyHealth>(out var enemyHp))
+            enemyHp.TakeDamage(damage);
 
         Destroy(gameObject);
     }
