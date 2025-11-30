@@ -4,68 +4,57 @@ using UnityEngine;
 [RequireComponent(typeof(Collider))]
 public class MagicProjectile : MonoBehaviour
 {
-    public float speed = 15f;
-    public float lifetime = 3f;
-    public int damage = 15;
-    public float maxDistance = 40f;  // safer default
-    public GameObject impactEffect;
+    public float speed      = 15f;
+    public float lifetime   = 3f;
+    public int   damage     = 15;
+    public float maxDistance = 40f;
+    public GameObject impactEffect; // optional hit VFX
 
-    private Rigidbody rb;
-    private Collider col;
-    private GameObject owner;
+    Rigidbody rb;
+    Collider  col;
+    GameObject owner;
+    Vector3 startPos;
 
-    private Vector3 startPos;
-
-    private void Awake()
+    void Awake()
     {
-        rb = GetComponent<Rigidbody>();
+        rb  = GetComponent<Rigidbody>();
         col = GetComponent<Collider>();
 
         rb.useGravity = false;
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-
         col.isTrigger = true;
     }
 
-    public void Launch(Vector3 direction, GameObject ownerObj)
+    public void Launch(Vector3 velocity, GameObject ownerObj)
     {
         owner = ownerObj;
-
-        // Correct start position
         startPos = transform.position;
 
-        rb.linearVelocity = Vector3.zero;
+        rb.linearVelocity        = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
 
-        // Ignore owner collisions
-        Collider[] ownerColliders = owner.GetComponentsInChildren<Collider>(true);
-        foreach (Collider oc in ownerColliders)
+        foreach (var oc in owner.GetComponentsInChildren<Collider>(true))
             Physics.IgnoreCollision(col, oc, true);
 
-        // Shoot
-        rb.linearVelocity = direction;
-
+        rb.linearVelocity = velocity;
         Destroy(gameObject, lifetime);
     }
 
-    private void Update()
+    void Update()
     {
         if (Vector3.Distance(startPos, transform.position) >= maxDistance)
             Destroy(gameObject);
     }
 
-    private void OnTriggerEnter(Collider other)
+    void OnTriggerEnter(Collider other)
     {
         if (other.gameObject == owner) return;
 
-        if (impactEffect != null)
+        if (impactEffect)
             Instantiate(impactEffect, transform.position, Quaternion.identity);
 
-        if (other.TryGetComponent<Health>(out var hp))
-            hp.TakeDamage(damage);
-
-        if (other.TryGetComponent<EnemyHealth>(out var enemyHp))
-            enemyHp.TakeDamage(damage);
+        if (other.TryGetComponent<Health>(out var hp))      hp.TakeDamage(damage);
+        if (other.TryGetComponent<EnemyHealth>(out var eh)) eh.TakeDamage(damage);
 
         Destroy(gameObject);
     }
