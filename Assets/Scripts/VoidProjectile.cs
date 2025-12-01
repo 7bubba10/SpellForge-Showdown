@@ -13,9 +13,21 @@ public class VoidProjectile : MonoBehaviour
     public int maxBounces = 5;
     public float bounceRange = 12f;
 
-    private Rigidbody rb;
-    private int currentBounce = 0;
-    private HashSet<GameObject> hitEnemies = new HashSet<GameObject>();
+    [Header("VFX (optional)")]
+    [Tooltip("Prefab that stays attached while the projectile travels (e.g., a swirling void orb).")]
+    public GameObject attachedVFXPrefab;
+    public Vector3 vfxLocalOffset;
+    public Vector3 vfxLocalEuler;
+    public bool destroyVFXOnDeath = true;
+
+    [Tooltip("One-shot VFX spawned at each hit (enemy or wall). Leave empty if you don't want an impact flash.")]
+    public GameObject hitVFXPrefab;
+    public float hitVFXLifetime = 3f;
+
+    Rigidbody rb;
+    int currentBounce = 0;
+    readonly HashSet<GameObject> hitEnemies = new HashSet<GameObject>();
+    GameObject spawnedVFX;
 
     void Awake()
     {
@@ -25,14 +37,40 @@ public class VoidProjectile : MonoBehaviour
     public void Launch(Vector3 direction)
     {
         rb.linearVelocity = direction.normalized * speed;
+
+        // Attach travel VFX
+        if (attachedVFXPrefab != null && spawnedVFX == null)
+        {
+            spawnedVFX = Instantiate(attachedVFXPrefab, transform);
+            spawnedVFX.transform.localPosition = vfxLocalOffset;
+            spawnedVFX.transform.localRotation = Quaternion.Euler(vfxLocalEuler);
+            spawnedVFX.transform.localScale = Vector3.one;
+
+            // Make sure particles begin immediately
+            foreach (var ps in spawnedVFX.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                var main = ps.main; main.playOnAwake = true; main.startDelay = 0f;
+                ps.Simulate(0f, true, true);
+                ps.Play(true);
+                // IMPORTANT: for attached effects, set Simulation Space = Local in the prefab
+            }
+        }
     }
 
-    private void OnCollisionEnter(Collision collision)
+    void OnCollisionEnter(Collision collision)
     {
         GameObject other = collision.gameObject;
 
-        // --------- DAMAGE ENEMY -----------
-        EnemyHealth enemy = other.GetComponent<EnemyHealth>();
+        // Optional one-shot impact VFX (enemy or wall)
+        if (hitVFXPrefab)
+        {
+            var contact = collision.GetContact(0);
+            var rot = Quaternion.LookRotation(contact.normal);
+            SpawnOneShot(hitVFXPrefab, contact.point, rot, hitVFXLifetime);
+        }
+
+        // Damage enemy and keep chaining
+        var enemy = other.GetComponent<EnemyHealth>();
         if (enemy != null)
         {
             if (!hitEnemies.Contains(other))
@@ -45,14 +83,13 @@ public class VoidProjectile : MonoBehaviour
             return;
         }
 
-        // Hit wall → destroy
+        // Hit non-enemy → stop
         Destroy(gameObject);
     }
 
     void TryBounceToNextEnemy()
     {
         currentBounce++;
-
         if (currentBounce > maxBounces)
         {
             Destroy(gameObject);
@@ -60,18 +97,16 @@ public class VoidProjectile : MonoBehaviour
         }
 
         EnemyHealth[] enemies = FindObjectsOfType<EnemyHealth>();
-
         GameObject bestTarget = null;
         float bestDist = Mathf.Infinity;
 
-        foreach (var enemy in enemies)
+        foreach (var e in enemies)
         {
-            if (enemy == null) continue;
-
-            float dist = Vector3.Distance(transform.position, enemy.transform.position);
-            if (dist < bestDist && dist <= bounceRange && !hitEnemies.Contains(enemy.gameObject))
+            if (e == null) continue;
+            float dist = Vector3.Distance(transform.position, e.transform.position);
+            if (dist < bestDist && dist <= bounceRange && !hitEnemies.Contains(e.gameObject))
             {
-                bestTarget = enemy.gameObject;
+                bestTarget = e.gameObject;
                 bestDist = dist;
             }
         }
@@ -85,5 +120,23 @@ public class VoidProjectile : MonoBehaviour
         // Aim at next enemy
         Vector3 dir = (bestTarget.transform.position - transform.position).normalized;
         Launch(dir);
+    }
+
+    void SpawnOneShot(GameObject prefab, Vector3 pos, Quaternion rot, float life)
+    {
+        var go = Instantiate(prefab, pos, rot);
+        foreach (var ps in go.GetComponentsInChildren<ParticleSystem>(true))
+        {
+            var main = ps.main; main.loop = false; main.playOnAwake = true; main.startDelay = 0f;
+            var em = ps.emission; em.rateOverTime = 0f; // use bursts only
+            ps.Play(true);
+        }
+        Destroy(go, life);
+    }
+
+    void OnDestroy()
+    {
+        if (destroyVFXOnDeath && spawnedVFX)
+            Destroy(spawnedVFX);
     }
 }
