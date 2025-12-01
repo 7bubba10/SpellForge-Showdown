@@ -91,6 +91,7 @@ public class PlayerHUD : MonoBehaviour
                 typeText = "Ice";
                 spellName = "Frost Cannon";
                 break;
+
         }
 
         if (spellTypeText != null)
