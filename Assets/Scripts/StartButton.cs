@@ -11,7 +11,7 @@ public class StartButton : MonoBehaviour
 
         startButton.onClick.AddListener(() =>
         {
-            SceneManager.LoadScene("MainScene_BackUp");
+            SceneManager.LoadScene("MainScene_BackUp (Jon) - Copy");
         });
 
     }

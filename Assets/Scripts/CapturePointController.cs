@@ -9,24 +9,47 @@ public class CapturePointController : MonoBehaviour
     private int lastIndex = -1;
     private GameObject currentPoint;
 
+    private void Awake()
+    {
+        // Ensure no capture point is active by default
+        DisableAll();
+    }
+
     // Turn ALL capture points off
     public void DisableAll()
     {
         foreach (var p in capturePoints)
-            p.SetActive(false);
+            if (p != null)
+                p.SetActive(false);
     }
 
-    // Select and activate a NEW capture point (used at start of round)
-    public void SelectNewCapturePoint()
+    // Called by GameManager when starting a new round
+    public void ActivatePointForNewRound()
+    {
+        DeactivateCurrentPoint();   // ensure previous one is off
+        SelectNewCapturePoint();    // activate exactly ONE new point
+    }
+
+    // Choose a new point that is NOT the same as last round
+    private void SelectNewCapturePoint()
     {
         if (capturePoints.Count == 0) return;
 
         int newIndex;
-        do
+
+        // If only 1 point exists, skip randomizing to avoid infinite loop
+        if (capturePoints.Count == 1)
         {
-            newIndex = Random.Range(0, capturePoints.Count);
+            newIndex = 0;
         }
-        while (newIndex == lastIndex);
+        else
+        {
+            do
+            {
+                newIndex = Random.Range(0, capturePoints.Count);
+            }
+            while (newIndex == lastIndex);
+        }
 
         lastIndex = newIndex;
 
@@ -36,7 +59,7 @@ public class CapturePointController : MonoBehaviour
         Debug.Log("Activated capture point: " + currentPoint.name);
     }
 
-    // Called by GameManager before activating a new point
+    // Called by GameManager when a round ends
     public void DeactivateCurrentPoint()
     {
         if (currentPoint != null)
@@ -44,11 +67,5 @@ public class CapturePointController : MonoBehaviour
             currentPoint.SetActive(false);
             currentPoint = null;
         }
-    }
-
-    // Called by GameManager when a new round starts
-    public void ActivatePointForNewRound()
-    {
-        SelectNewCapturePoint();
     }
 }

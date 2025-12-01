@@ -5,7 +5,7 @@ using UnityEngine.AI;
 public class EnemyAI : MonoBehaviour
 {
     [Header("Detection")]
-    public float detectionRange = 20f;
+    public float detectionRange = 40f;
     public float stoppingDistance = 2.5f;
 
     [Header("Wandering")]
@@ -23,6 +23,8 @@ public class EnemyAI : MonoBehaviour
     private EnemyHealth myHealth;
     private float wanderTimer;
 
+    private bool hasDetectedPlayer = false;   // NEW → once true, always chase!
+
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
@@ -39,10 +41,8 @@ public class EnemyAI : MonoBehaviour
     {
         if (myHealth == null) return;
 
-        // Cooldown timer
         attackTimer -= Time.deltaTime;
 
-        // No player?
         if (target == null)
         {
             Wander();
@@ -51,17 +51,15 @@ public class EnemyAI : MonoBehaviour
 
         float distance = Vector3.Distance(transform.position, target.position);
 
-        // Player within detection range → chase
-        if (distance <= detectionRange)
+        // If player enters detection range one time → permanently set
+        if (!hasDetectedPlayer && distance <= detectionRange)
         {
-            agent.stoppingDistance = stoppingDistance;
-            agent.SetDestination(target.position);
+            hasDetectedPlayer = true;
+        }
 
-            // Check if enemy can damage player
-            if (distance <= stoppingDistance + 0.5f)
-            {
-                TryAttackPlayer();
-            }
+        if (hasDetectedPlayer)
+        {
+            ChaseAndAttack(distance);
         }
         else
         {
@@ -69,9 +67,20 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
+    private void ChaseAndAttack(float distance)
+    {
+        agent.stoppingDistance = stoppingDistance;
+        agent.SetDestination(target.position);
+
+        if (distance <= stoppingDistance + 0.5f)
+        {
+            TryAttackPlayer();
+        }
+    }
+
     private void TryAttackPlayer()
     {
-        if (attackTimer > 0f) return; // still cooling down
+        if (attackTimer > 0f) return;
 
         if (target.TryGetComponent<Health>(out var hp))
         {
