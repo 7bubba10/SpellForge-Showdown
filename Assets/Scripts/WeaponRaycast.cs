@@ -1,5 +1,5 @@
-using System.Collections;
 using UnityEngine;
+using System.Collections;
 
 public class WeaponRaycast : MonoBehaviour
 {
@@ -9,19 +9,25 @@ public class WeaponRaycast : MonoBehaviour
     public float baseFireRate = 5f;
 
     [Header("Optional VFX")]
-    public ParticleSystem loopMuzzleVFX;   // assign the flamethrower loop here (Fire only)
+    public ParticleSystem loopMuzzleVFX;
+    public GameObject chargedImpactVFX;
 
-    [HideInInspector] public int   elementDamage;
+    [HideInInspector] public int elementDamage;
     [HideInInspector] public float elementSpeed;
     [HideInInspector] public float elementFireRateMultiplier = 1f;
 
-    private float nextFireTime;
     private ElementWeaponProperties props;
+    private float nextFireTime;
     private bool isCharging;
 
     private void Awake()
     {
         props = GetComponent<ElementWeaponProperties>();
+    }
+
+    private void OnEnable()
+    {
+        ToggleLoopVFX(false);
     }
 
     private void OnDisable()
@@ -31,21 +37,23 @@ public class WeaponRaycast : MonoBehaviour
 
     private void Update()
     {
-        // manual reload
+        // Manual reload
         if (Input.GetKeyDown(KeyCode.R) && !props.isLoading)
         {
             StartCoroutine(StartReload());
+            ToggleLoopVFX(false);
             return;
         }
 
-        // auto reload
+        // Automatic reload when empty
         if (props.currentAmmo <= 0 && !props.isLoading)
         {
             StartCoroutine(StartReload());
+            ToggleLoopVFX(false);
             return;
         }
 
-        // Charged-shot (Steam)
+        // Steam charged-shot
         if (props.isChargedShot)
         {
             ToggleLoopVFX(false);
@@ -53,10 +61,10 @@ public class WeaponRaycast : MonoBehaviour
             return;
         }
 
-        // Normal weapons (Fire/Air/Water/Earth/etc.)
-        bool holding = props.isAutomatic ? Input.GetMouseButton(0) : Input.GetMouseButtonDown(0);
+        // Normal weapons
+        bool holding = props.isAutomatic ? Input.GetMouseButton(0)
+                                         : Input.GetMouseButtonDown(0);
 
-        // start/stop flamethrower loop while firing
         ToggleLoopVFX(holding && !props.isLoading);
 
         if (holding && Time.time >= nextFireTime && !props.isLoading)
@@ -66,7 +74,7 @@ public class WeaponRaycast : MonoBehaviour
         }
     }
 
-    // ----------------- Helpers -----------------
+    // ---------------- VFX MANAGEMENT ----------------
 
     private void ToggleLoopVFX(bool shouldPlay)
     {
@@ -79,42 +87,61 @@ public class WeaponRaycast : MonoBehaviour
         else
         {
             if (loopMuzzleVFX.isPlaying)
-                loopMuzzleVFX.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+                loopMuzzleVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
     }
+
+    // ---------------- NORMAL SHOT ----------------
 
     private void ShootNormal()
     {
         props.currentAmmo--;
 
-        var spawnPos = firePoint.position + firePoint.forward * 0.6f;
-        var projObj  = Instantiate(projectilePrefab, spawnPos, firePoint.rotation);
+        Vector3 spawnPos = firePoint.position + firePoint.forward * 0.6f;
+        GameObject projObj = Instantiate(projectilePrefab, spawnPos, firePoint.rotation);
 
-        // Prefer the generic interface
+        // 1) Your teammate’s IMagicLaunchable system
         var launchable = projObj.GetComponent<IMagicLaunchable>();
         if (launchable != null)
         {
             launchable.Configure(elementDamage, elementSpeed);
-            launchable.Launch(firePoint.forward * elementSpeed, this.transform.root.gameObject);
+            launchable.Launch(firePoint.forward * elementSpeed, transform.root.gameObject);
             return;
         }
 
-        // Back-compat with older prefabs
-        var proj = projObj.GetComponent<MagicProjectile>();
-        if (proj != null)
+        // 2) Backwards compatibility – normal magic bullet
+        MagicProjectile mp = projObj.GetComponent<MagicProjectile>();
+        if (mp != null)
         {
-            proj.damage = elementDamage;
-            proj.speed  = elementSpeed;
-            proj.Launch(firePoint.forward * proj.speed, this.transform.root.gameObject);
+            mp.damage = elementDamage;
+            mp.speed = elementSpeed;
+
+            // Charged VFX only applies to magic projectiles
+            mp.impactEffect = chargedImpactVFX;
+
+            mp.Launch(firePoint.forward * elementSpeed, transform.root.gameObject);
+            return;
         }
-        else
+
+        // 3) Your Void Projectile support (bouncing)
+        VoidProjectile vp = projObj.GetComponent<VoidProjectile>();
+        if (vp != null)
         {
-            Debug.LogWarning("Projectile prefab has neither IMagicLaunchable nor MagicProjectile.");
-            Destroy(projObj);
+            vp.damage = elementDamage;
+            vp.speed = elementSpeed;
+            vp.origin = transform.root.gameObject;
+
+            // Unity 6 safe: Launch(directionOnly)
+            vp.Launch(firePoint.forward);
+
+            return;
         }
+
+        Debug.LogWarning($"Projectile '{projObj.name}' has no recognized projectile component!");
+        Destroy(projObj);
     }
 
-    // -------------- Charged Shot (Steam) --------------
+    // ---------------- CHARGED SHOT (STEAM) ----------------
 
     private void HandleChargedShot()
     {
@@ -125,14 +152,14 @@ public class WeaponRaycast : MonoBehaviour
             props.currentCharge = props.minCharge;
         }
 
-        // Accumulate while held
+        // While holding
         if (Input.GetMouseButton(0) && isCharging)
         {
             props.currentCharge += Time.deltaTime * props.maxCharge;
             props.currentCharge = Mathf.Clamp(props.currentCharge, props.minCharge, props.maxCharge);
         }
 
-        // Release to fire
+        // Release shot
         if (Input.GetMouseButtonUp(0) && isCharging)
         {
             isCharging = false;
@@ -145,34 +172,51 @@ public class WeaponRaycast : MonoBehaviour
     {
         props.currentAmmo--;
 
-        float dmg   = elementDamage * charge;
-        float speed = elementSpeed * Mathf.Lerp(1f, 1.4f, charge / props.maxCharge);
+        int chargedDamage = Mathf.RoundToInt(elementDamage * charge);
+        float chargedSpeed = elementSpeed *
+                             Mathf.Lerp(1f, 1.4f, charge / props.maxCharge);
 
-        var spawnPos = firePoint.position + firePoint.forward * 0.6f;
-        var projObj  = Instantiate(projectilePrefab, spawnPos, firePoint.rotation);
+        Vector3 spawnPos = firePoint.position + firePoint.forward * 0.6f;
+        GameObject projObj = Instantiate(projectilePrefab, spawnPos, firePoint.rotation);
 
+        // 1) Interface-based projectile
         var launchable = projObj.GetComponent<IMagicLaunchable>();
         if (launchable != null)
         {
-            launchable.Configure(Mathf.RoundToInt(dmg), speed);
-            launchable.Launch(firePoint.forward * speed, this.transform.root.gameObject);
+            launchable.Configure(chargedDamage, chargedSpeed);
+            launchable.Launch(firePoint.forward * chargedSpeed, transform.root.gameObject);
+            return;
         }
-        else
+
+        // 2) MagicProjectile charged
+        MagicProjectile mp = projObj.GetComponent<MagicProjectile>();
+        if (mp != null)
         {
-            var proj = projObj.GetComponent<MagicProjectile>();
-            if (proj != null)
-            {
-                proj.damage = Mathf.RoundToInt(dmg);
-                proj.speed  = speed;
-                proj.Launch(firePoint.forward * proj.speed, this.transform.root.gameObject);
-            }
-            else
-            {
-                Debug.LogWarning("ChargedShot prefab missing IMagicLaunchable/MagicProjectile.");
-                Destroy(projObj);
-            }
+            mp.damage = chargedDamage;
+            mp.speed = chargedSpeed;
+            mp.impactEffect = chargedImpactVFX;
+
+            mp.Launch(firePoint.forward * chargedSpeed, transform.root.gameObject);
+            return;
         }
+
+        // 3) Void projectile should NOT be charged
+        VoidProjectile vp = projObj.GetComponent<VoidProjectile>();
+        if (vp != null)
+        {
+            vp.damage = chargedDamage;
+            vp.speed = chargedSpeed;
+            vp.origin = transform.root.gameObject;
+
+            vp.Launch(firePoint.forward);
+            return;
+        }
+
+        Debug.LogWarning("ChargedShot prefab missing recognized projectile type.");
+        Destroy(projObj);
     }
+
+    // ---------------- RELOAD ----------------
 
     private IEnumerator StartReload()
     {

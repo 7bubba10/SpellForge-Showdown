@@ -9,7 +9,8 @@ public enum ElementType
     Water,
     Steam,
     Ice,
-    Lightning
+    Shadow,     
+    Lightning   
 }
 
 public class PlayerElementManager : MonoBehaviour
@@ -28,10 +29,10 @@ public class PlayerElementManager : MonoBehaviour
     public GameObject airWeapon;
     public GameObject waterWeapon;
     public GameObject steamWeapon;
-    
     public GameObject iceWeapon;
-    public GameObject lightningWeapon;
 
+    public GameObject shadowWeapon;     // yours
+    public GameObject lightningWeapon;  // teammate’s
 
     [Header("Element Damage")]
     public int fireDamage = 15;
@@ -41,7 +42,8 @@ public class PlayerElementManager : MonoBehaviour
     public int steamDamage = 25;
 
     public int iceDamage = 40;
-    public int lightningDamage = 30;
+    public int lightningDamage = 30; // teammate
+    public int shadowDamage = 25;    // your shadow damage
 
     [Header("Element Speed")]
     public float fireSpeed = 10f;
@@ -51,8 +53,8 @@ public class PlayerElementManager : MonoBehaviour
     public float steamSpeed = 12f;
 
     public float iceSpeed = 30f;
-    public float lightningSpeed = 0f; // not used by AOE, but fine to keep
-
+    public float lightningSpeed = 0f; // AOE style (unused but required)
+    public float shadowSpeed = 20f;   // your void-bounce projectile speed
 
     private void Start()
     {
@@ -85,7 +87,6 @@ public class PlayerElementManager : MonoBehaviour
             EquipElement(elementB);
             return;
         }
-        
 
         Debug.Log("Inventory full!");
     }
@@ -96,14 +97,10 @@ public class PlayerElementManager : MonoBehaviour
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Q))
-        {
             SwitchElement();
-        }
 
         if (Input.GetKeyDown(KeyCode.F))
-        {
             TryCraftSteam();
-        }
     }
 
     private void SwitchElement()
@@ -146,6 +143,8 @@ public class PlayerElementManager : MonoBehaviour
         waterWeapon.SetActive(false);
         steamWeapon.SetActive(false);
         iceWeapon.SetActive(false);
+
+        shadowWeapon.SetActive(false);
         lightningWeapon.SetActive(false);
 
         GameObject weaponToEnable = null;
@@ -159,33 +158,25 @@ public class PlayerElementManager : MonoBehaviour
 
         switch (newElement)
         {
-            // =============================================================
-            // FIRE 
-            // =============================================================
+            // FIRE ---------------------------------
             case ElementType.Fire:
                 weaponToEnable = fireWeapon;
                 dmg = fireDamage;
-                speed = 5f;          // slow flame-like speed
-                pellets = 1;         // stream
-                spread = 0f;         // no spread
-                auto = true;         // hold to fire
-                sniper = false;
-                rateMult = 4f;       // very fast fire rate
+                speed = 5f;
+                pellets = 1;
+                spread = 0f;
+                auto = true;
+                rateMult = 4f;
                 break;
 
-            // =============================================================
-            // EARTH 
-            // =============================================================
+            // EARTH --------------------------------
             case ElementType.Earth:
                 weaponToEnable = earthWeapon;
                 dmg = earthDamage;
                 speed = earthSpeed;
-                pellets = 1;
                 break;
 
-            // =============================================================
-            // AIR 
-            // =============================================================
+            // AIR ----------------------------------
             case ElementType.Air:
                 weaponToEnable = airWeapon;
                 dmg = airDamage;
@@ -194,9 +185,7 @@ public class PlayerElementManager : MonoBehaviour
                 rateMult = 2f;
                 break;
 
-            // =============================================================
-            // WATER 
-            // =============================================================
+            // WATER --------------------------------
             case ElementType.Water:
                 weaponToEnable = waterWeapon;
                 dmg = waterDamage;
@@ -204,47 +193,39 @@ public class PlayerElementManager : MonoBehaviour
                 sniper = true;
                 break;
 
-            // =============================================================
-            // ICE  
-            // =============================================================
+            // ICE ----------------------------------
             case ElementType.Ice:
                 weaponToEnable = iceWeapon;
                 dmg = iceDamage;
                 speed = iceSpeed;
-                pellets = 1;
-                spread = 0f;
-                auto = false;      // click-to-fire
-                sniper = false;
-                rateMult = 0.8f;   // slower than default rate
+                auto = false;
+                rateMult = 0.8f;
                 break;
-            
-            // =============================================================
-            // STEAM 
-            // =============================================================
+
+            // STEAM --------------------------------
             case ElementType.Steam:
                 weaponToEnable = steamWeapon;
                 dmg = steamDamage;
                 speed = steamSpeed;
-                pellets = 1;        // triple burst
-                spread = 0f;        // no shotgun spread
-                auto = false;       // click once → burst
-                sniper = false;
+                auto = false;
                 rateMult = 1f;
                 break;
-            
+
+            // SHADOW --------------------------------
+            case ElementType.Shadow:
+                weaponToEnable = shadowWeapon;
+                dmg = shadowDamage;
+                speed = shadowSpeed;
+                // uses void projectile
+                break;
+
+            // LIGHTNING ------------------------------
             case ElementType.Lightning:
                 weaponToEnable = lightningWeapon;
                 dmg = lightningDamage;
-                speed = lightningSpeed; // ignored by AOE
-                pellets = 1;
-                spread = 0f;
-                auto = false;       // click to zap
-                sniper = false;
-                rateMult = 1f;      // adjust to taste
+                speed = lightningSpeed; // not used but ok
+                auto = false;
                 break;
-
-
-            
 
             case ElementType.None:
                 Debug.Log("Player has no element equipped.");
@@ -260,14 +241,14 @@ public class PlayerElementManager : MonoBehaviour
     // APPLY VALUES TO WEAPON
     // ===================================================================
     private void SetupWeapon(
-    GameObject weapon,
-    int dmg,
-    float speed,
-    int pellets,
-    float spread,
-    bool sniper,
-    bool auto,
-    float rateMult)
+        GameObject weapon,
+        int dmg,
+        float speed,
+        int pellets,
+        float spread,
+        bool sniper,
+        bool auto,
+        float rateMult)
     {
         if (weapon == null) return;
 
@@ -276,13 +257,12 @@ public class PlayerElementManager : MonoBehaviour
         ElementWeaponProperties props = weapon.GetComponent<ElementWeaponProperties>();
         WeaponRaycast ray = weapon.GetComponent<WeaponRaycast>();
 
-        // Steam = Charged Shot
+        // Steam charged shot support
         if (props != null)
         {
             props.isChargedShot = (currentElement == ElementType.Steam);
             props.currentCharge = 0f;
 
-            // normal stats
             props.pellets = pellets;
             props.spread = spread;
             props.isSniper = sniper;
