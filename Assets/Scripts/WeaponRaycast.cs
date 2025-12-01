@@ -11,6 +11,8 @@ public class WeaponRaycast : MonoBehaviour
     [Header("Optional VFX")]
     // Assign your vfx_Flamethrower_01 (ParticleSystem) on the Fire weapon only.
     public ParticleSystem loopMuzzleVFX;
+    public GameObject chargedImpactVFX;     // <-- assign Steam_ChargedImpact here
+
 
     [HideInInspector] public int   elementDamage;
     [HideInInspector] public float elementSpeed;
@@ -114,6 +116,7 @@ public class WeaponRaycast : MonoBehaviour
 
         proj.damage = Mathf.RoundToInt(dmg);
         proj.speed  = spd;
+        proj.impactEffect = chargedImpactVFX;
         proj.Launch(firePoint.forward * proj.speed, transform.root.gameObject);
     }
 
