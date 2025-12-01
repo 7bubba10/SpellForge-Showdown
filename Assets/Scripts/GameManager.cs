@@ -6,8 +6,8 @@ public class GameManager : MonoBehaviour
 
     [Header("Round Settings")]
     public int currentRound = 0;
-    public int baseActiveEnemies = 5;
-    public int activeIncrement = 2;
+    public int baseActiveEnemies = 10;
+    public int activeIncrement = 4;
 
     [Header("Runtime Tracking")]
     public int enemiesAlive = 0;
