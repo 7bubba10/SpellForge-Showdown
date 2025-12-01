@@ -15,10 +15,12 @@ public class ElementPickup : MonoBehaviour
     private float holdProgress = 0f;
 
     private PlayerHUD hud;
+    private AudioSource audio_source;
 
     private void Awake()
     {
         hud = FindObjectOfType<PlayerHUD>();
+        audio_source = GetComponent<AudioSource>();
     }
 
     private void Reset()
@@ -73,6 +75,7 @@ public class ElementPickup : MonoBehaviour
             if (holdProgress >= holdTime)
             {
                 ClaimElement();
+                audio_source.Play();
             }
         }
         else

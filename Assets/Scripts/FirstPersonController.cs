@@ -63,6 +63,7 @@ public class FirstPersonController : MonoBehaviour
         if (grounded && verticalVelocity < 0f)
             verticalVelocity = -2f;
 
+
         if (grounded && Input.GetButtonDown("Jump"))
             verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
 
