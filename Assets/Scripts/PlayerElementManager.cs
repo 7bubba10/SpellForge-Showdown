@@ -8,7 +8,8 @@ public enum ElementType
     Air,
     Water,
     Steam,
-    Ice
+    Ice,
+    Lightning
 }
 
 public class PlayerElementManager : MonoBehaviour
@@ -29,6 +30,8 @@ public class PlayerElementManager : MonoBehaviour
     public GameObject steamWeapon;
     
     public GameObject iceWeapon;
+    public GameObject lightningWeapon;
+
 
     [Header("Element Damage")]
     public int fireDamage = 15;
@@ -38,6 +41,7 @@ public class PlayerElementManager : MonoBehaviour
     public int steamDamage = 25;
 
     public int iceDamage = 40;
+    public int lightningDamage = 30;
 
     [Header("Element Speed")]
     public float fireSpeed = 10f;
@@ -47,6 +51,8 @@ public class PlayerElementManager : MonoBehaviour
     public float steamSpeed = 12f;
 
     public float iceSpeed = 30f;
+    public float lightningSpeed = 0f; // not used by AOE, but fine to keep
+
 
     private void Start()
     {
@@ -79,6 +85,7 @@ public class PlayerElementManager : MonoBehaviour
             EquipElement(elementB);
             return;
         }
+        
 
         Debug.Log("Inventory full!");
     }
@@ -139,6 +146,7 @@ public class PlayerElementManager : MonoBehaviour
         waterWeapon.SetActive(false);
         steamWeapon.SetActive(false);
         iceWeapon.SetActive(false);
+        lightningWeapon.SetActive(false);
 
         GameObject weaponToEnable = null;
         int dmg = 0;
@@ -223,6 +231,18 @@ public class PlayerElementManager : MonoBehaviour
                 sniper = false;
                 rateMult = 1f;
                 break;
+            
+            case ElementType.Lightning:
+                weaponToEnable = lightningWeapon;
+                dmg = lightningDamage;
+                speed = lightningSpeed; // ignored by AOE
+                pellets = 1;
+                spread = 0f;
+                auto = false;       // click to zap
+                sniper = false;
+                rateMult = 1f;      // adjust to taste
+                break;
+
 
             
 
@@ -256,7 +276,7 @@ public class PlayerElementManager : MonoBehaviour
         ElementWeaponProperties props = weapon.GetComponent<ElementWeaponProperties>();
         WeaponRaycast ray = weapon.GetComponent<WeaponRaycast>();
 
-        // 🔥 Steam = Charged Shot
+        // Steam = Charged Shot
         if (props != null)
         {
             props.isChargedShot = (currentElement == ElementType.Steam);
